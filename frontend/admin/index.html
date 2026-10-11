@@ -1,0 +1,18 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>لوحة التحكم</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/admin/style.css"></head><body>
+<div id="login"><input id="tk" type="password" placeholder="رمز الإدارة"><button class="g" id="go">دخول</button></div>
+<div id="app" hidden>
+<h1>لوحة التحكم</h1>
+<h2>الوكالات</h2><div id="ags"></div>
+<div class="row"><input id="an" placeholder="اسم الوكالة"><input id="as" placeholder="رابط بأحرف إنجليزية، مثل agence-nour"><button class="g" id="aa">إضافة وكالة</button></div>
+<h2>رفع بيت</h2>
+<p style="color:rgba(242,240,236,.6);margin:0">اختر ملف التصدير (⬇ تصدير) من منصة التصميم الخاصة بك، ثم الوكالة. يُرفع البيت كمسودة.</p>
+<div class="row"><input type="file" id="jf" accept=".json"><select id="ag"></select><input id="hsg" placeholder="رابط البيت بالإنجليزية، مثل villa-hydra"><button class="g" id="up">رفع</button></div><div id="msg"></div>
+<div id="pe" hidden><div class="pb"><b id="pt"></b><button id="pdoor">🚪 أبواب (إضافة/حذف)</button><label>العرض م <input id="pw" type="number" step=".1" min="1"></label><label>الطول م <input id="pl2" type="number" step=".1" min="1"></label><label>الارتفاع م <input id="ph" type="number" step=".1" min="1"></label><button id="pfit">ملاءمة</button><button class="g" id="psave">حفظ المخطط</button><button id="pclose">إغلاق</button></div><svg id="pc"></svg></div>
+<h2>هوية الوكالة</h2><div class="row"><select id="bg"></select><input type="color" id="bc" value="#c9a96a" style="padding:2px;height:42px;width:56px"><select id="bf"><option>Cairo</option><option>Tajawal</option><option>Almarai</option><option>Noto Kufi Arabic</option><option>El Messiri</option><option>Reem Kufi</option><option>Amiri</option><option>IBM Plex Sans Arabic</option><option value="Poppins">Poppins (حروف لاتينية)</option><option value="Playfair Display">Playfair Display (حروف لاتينية)</option></select><input type="file" id="lf" accept="image/*"><button class="g" id="bs">حفظ الهوية</button></div><div class="row"><label>الخلفية <input type="color" id="bb" value="#0b0b0d"></label><label>النص <input type="color" id="bt" value="#f2f0ec"></label><select id="be"><option value="none">خلفية ثابتة</option><option value="flow">تدرج متحرك</option><option value="aurora">شفق متحرك</option><option value="dots">جزيئات صاعدة</option><option value="pan">بانوراما متحركة</option><option value="custom">ملف خاص: فيديو أو صورة</option></select><input type="file" id="bk" accept="image/*,video/mp4,video/webm"></div>
+<div id="msg2" style="color:#c9a96a;margin-top:8px"></div>
+<h2>البيوت</h2><div id="hs"></div>
+</div>
+<script src="/static/shared/layout.js"></script>
+<script src="/static/admin/app.js"></script></body></html>
