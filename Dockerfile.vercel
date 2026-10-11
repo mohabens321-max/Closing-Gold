@@ -1,0 +1,10 @@
+# لـ Vercel: الاسم يجب أن يكون Dockerfile.vercel. لا يوجد قرص دائم، فاستعمل STORAGE=s3
+FROM python:3.12-slim
+ENV PYTHONUNBUFFERED=1 PORT=8080 STORAGE=s3 MAX_UPLOAD_MB=4
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+RUN useradd -m app && chown -R app /app
+USER app
+CMD ["sh", "-c", "gunicorn -b 0.0.0.0:${PORT} -w 2 --threads 4 --timeout 60 app:app"]
