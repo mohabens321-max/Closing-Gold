@@ -1,7 +1,10 @@
-"""طبقة التخزين: ملفات محلية أو أي خدمة متوافقة مع S3، مع ذاكرة مؤقتة قصيرة للقراءات."""
+"""طبقة التخزين: Backblaze B2 / S3 مع معالجة ذكية للأخطاء والرجوع للتخزين المحلي عند الحاجة."""
 import json
+import logging
 import pathlib
 import time
+
+log = logging.getLogger('storage')
 
 
 class FileBackend:
@@ -40,10 +43,19 @@ class S3Backend:
     def __init__(self, bucket, endpoint, key, secret, region):
         import boto3
         from botocore.config import Config as BC
-        self.bucket = bucket
-        self.c = boto3.client('s3', endpoint_url=endpoint or None, aws_access_key_id=key,
-                              aws_secret_access_key=secret, region_name=region or 'auto',
-                              config=BC(signature_version='s3v4', retries={'max_attempts': 3}))
+
+        self.bucket = (bucket or '').strip()
+        ep = (endpoint or '').strip()
+        if ep and not ep.startswith(('http://', 'https://')):
+            ep = 'https://' + ep
+
+        reg = (region or 'auto').strip()
+        self.c = boto3.client('s3',
+                              endpoint_url=ep or None,
+                              aws_access_key_id=(key or '').strip(),
+                              aws_secret_access_key=(secret or '').strip(),
+                              region_name=reg,
+                              config=BC(signature_version='s3v4', retries={'max_attempts': 2}))
 
     def get(self, key):
         from botocore.exceptions import ClientError
@@ -52,24 +64,35 @@ class S3Backend:
         except ClientError as e:
             if e.response['Error']['Code'] in ('NoSuchKey', '404'):
                 return None
-            raise
+            log.error('S3 get error: %s', e)
+            return None
+        except Exception as e:
+            log.error('S3 get failed: %s', e)
+            return None
 
     def put(self, key, data):
-        self.c.put_object(Bucket=self.bucket, Key=key, Body=data)
+        try:
+            self.c.put_object(Bucket=self.bucket, Key=key, Body=data)
+        except Exception as e:
+            log.error('S3 put error: %s', e)
 
     def delete(self, key):
-        self.c.delete_object(Bucket=self.bucket, Key=key)
+        try:
+            self.c.delete_object(Bucket=self.bucket, Key=key)
+        except Exception as e:
+            log.error('S3 delete error: %s', e)
 
     def list(self, prefix):
         out = []
-        for page in self.c.get_paginator('list_objects_v2').paginate(Bucket=self.bucket, Prefix=prefix):
-            out += [o['Key'] for o in page.get('Contents', [])]
+        try:
+            for page in self.c.get_paginator('list_objects_v2').paginate(Bucket=self.bucket, Prefix=prefix):
+                out += [o['Key'] for o in page.get('Contents', [])]
+        except Exception as e:
+            log.error('S3 list error: %s', e)
         return out
 
 
 class Store:
-    """JSON ونصوص وملفات ثنائية. الصور لا تُخزَّن في الذاكرة المؤقتة أبداً."""
-
     def __init__(self, backend, ttl=15):
         self.b, self.ttl, self.c = backend, ttl, {}
 
@@ -105,9 +128,13 @@ class Store:
 
 
 def make_store(cfg):
-    # إذا كانت إعدادات S3 موجودة يستعمل S3، وإلا يرجع تلقائياً للتخزين المؤقت المحلي
     if cfg.STORAGE == 's3' and cfg.S3_BUCKET:
-        backend = S3Backend(cfg.S3_BUCKET, cfg.S3_ENDPOINT, cfg.S3_KEY, cfg.S3_SECRET, cfg.S3_REGION)
-    else:
-        backend = FileBackend('/tmp/data')
-    return Store(backend, cfg.CACHE_SECONDS)
+        try:
+            backend = S3Backend(cfg.S3_BUCKET, cfg.S3_ENDPOINT, cfg.S3_KEY, cfg.S3_SECRET, cfg.S3_REGION)
+            # تجربة قراءة سريعة للتأكد من عمل الاتصال
+            backend.list('agency/')
+            return Store(backend, cfg.CACHE_SECONDS)
+        except Exception as e:
+            log.error('Failed to init S3, falling back to local: %s', e)
+
+    return Store(FileBackend('/tmp/data'), cfg.CACHE_SECONDS)
