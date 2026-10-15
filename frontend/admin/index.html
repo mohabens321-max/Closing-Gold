@@ -1,6 +1,14 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>لوحة التحكم</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/admin/style.css"></head><body>
+<link rel="stylesheet" href="/static/admin/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+#qrmodal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:99;display:flex;align-items:center;justify-content:center;padding:16px}
+#qrmodal[hidden]{display:none}
+.qrbox{background:#17171b;border:1px solid #c9a96a;border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.qrcanvas{background:#fff;padding:12px;border-radius:12px;display:inline-block}
+</style>
+</head><body>
 <div id="login"><input id="tk" type="password" placeholder="رمز الإدارة"><button class="g" id="go">دخول</button></div>
 <div id="app" hidden>
 <h1>لوحة التحكم</h1>
@@ -14,5 +22,20 @@
 <div id="msg2" style="color:#c9a96a;margin-top:8px"></div>
 <h2>البيوت</h2><div id="hs"></div>
 </div>
+
+<div id="qrmodal" hidden>
+  <div class="qrbox">
+    <h3 id="qrtitle" style="margin:0;color:#c9a96a"></h3>
+    <div id="qrsub" style="font-size:14px;color:rgba(242,240,236,.7)"></div>
+    <div id="qrarea" class="qrcanvas"></div>
+    <div id="qrlink" style="font-size:12px;direction:ltr;color:#c9a96a;word-break:break-all"></div>
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="g" id="qrdown" style="flex:1">⬇ تحميل للطباعة (PNG)</button>
+      <button id="qrcopy">نسخ الرابط</button>
+    </div>
+    <button id="qrclose" style="width:100%;margin-top:4px">إغلاق</button>
+  </div>
+</div>
+
 <script src="/static/shared/layout.js"></script>
 <script src="/static/admin/app.js"></script></body></html>
