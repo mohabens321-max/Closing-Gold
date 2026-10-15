@@ -2,25 +2,123 @@ const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>'&#'+
 
 let tk=sessionStorage.tk||'',D,MAXUP=24e6;
 const msg=t=>$('#msg').textContent=t;
-const MAXW=3072,Q=.82; // جودة وحجم الصور: ارفع الرقمين للجودة، أنزلهما للسعة
+const MAXW=3072,Q=.82;
 const shrink=src=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const w=Math.min(i.width,MAXW),c=document.createElement('canvas');c.width=w;c.height=Math.round(w*i.height/i.width);c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(),'image/jpeg',Q)};i.onerror=no;i.src=src});
 const logoBlob=f=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const k=Math.min(1,400/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(ok,'image/png')};i.onerror=no;i.src=URL.createObjectURL(f)});
 function fillBrand(){const a=D.agencies.find(x=>x.id==$('#bg').value);if(a){$('#bc').value=a.color||'#c9a96a';$('#bf').value=a.font||'Cairo';$('#bb').value=a.bg||'#0b0b0d';$('#bt').value=a.tx||'#f2f0ec';$('#be').value=a.fx||'none'}}
 const api=async(p,m,b)=>{const r=await fetch('/api/admin/'+p,{method:m||'GET',headers:{authorization:'Bearer '+tk},body:b===undefined?undefined:(b instanceof Blob?b:JSON.stringify(b))});if(r.status==401){sessionStorage.tk='';$('#app').hidden=true;$('#login').hidden=false;throw 0}return r.json()};
-async function load(){D=await api('list');MAXUP=((await api('config')).max_upload_mb||24)*1e6;$('#login').hidden=true;$('#app').hidden=false;
-$('#ags').innerHTML=D.agencies.map(a=>'<div class="r"><b>'+esc(a.name)+'</b><a href="/a/'+a.slug+'" target="_blank">/a/'+a.slug+'</a><span class="s '+a.status+'">'+L[a.status]+'</span><button data-t="agency" data-i="'+a.id+'" data-s="'+(a.status=='active'?'blocked':'active')+'">'+(a.status=='active'?'🚫 إيقاف الوكالة':'✅ تفعيل')+'</button><button data-x="'+a.id+'">🗑</button></div>').join('')||'<p>لا وكالات بعد.</p>';
-$('#ag').innerHTML=D.agencies.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join('');const sb=$('#bg').value;$('#bg').innerHTML=$('#ag').innerHTML;if(sb)$('#bg').value=sb;fillBrand();
-const nm={},sl={};D.agencies.forEach(a=>{nm[a.id]=a.name;sl[a.id]=a.slug});const lk=h=>h.slug?'/a/'+sl[h.agency]+'/'+h.slug:'/h/'+h.id;
-$('#hs').innerHTML=D.houses.map(h=>'<div class="r"><b>'+esc(h.name)+'</b><span>'+esc(nm[h.agency]||'')+' - '+h.n+' غرفة</span><a dir="ltr" href="'+lk(h)+'" target="_blank">'+lk(h)+'</a><button data-s2="'+h.id+'">✎</button><select data-h="'+h.id+'">'+['draft','active','blocked'].map(s=>'<option value="'+s+'"'+(s==h.status?' selected':'')+'>'+L[s]+'</option>').join('')+'</select><button data-p="'+h.id+'">🗺</button><button data-d="'+h.id+'">🗑</button></div>').join('')||'<p>لا بيوت بعد.</p>'}
-document.addEventListener('click',async e=>{const b=e.target;if(b.dataset.t){await api('status','POST',{type:b.dataset.t,id:b.dataset.i,status:b.dataset.s});load()}if(b.dataset.p)editPlan(b.dataset.p);if(b.dataset.s2){const s=prompt('رابط البيت الجديد (أحرف إنجليزية وأرقام و-)');if(s){const r=await api('slug','POST',{id:b.dataset.s2,slug:s});if(r.e)alert('الرابط مستعمل أو غير صالح');load()}}if(b.dataset.x&&confirm('حذف هذه الوكالة نهائياً؟')){const r=await api('delagency/'+b.dataset.x,'POST',{});if(r.e)alert('احذف بيوت هذه الوكالة أولاً');load()}if(b.dataset.d&&confirm('حذف هذا البيت نهائياً؟')){await api('del/'+b.dataset.d,'POST',{});load()}});
+
+let nm={},sl={};
+const lk=h=>h.slug?'/a/'+sl[h.agency]+'/'+h.slug:'/h/'+h.id;
+
+async function load(){
+  D=await api('list');
+  MAXUP=((await api('config')).max_upload_mb||24)*1e6;
+  $('#login').hidden=true;
+  $('#app').hidden=false;
+  $('#ags').innerHTML=D.agencies.map(a=>'<div class="r"><b>'+esc(a.name)+'</b><a href="/a/'+a.slug+'" target="_blank">/a/'+a.slug+'</a><span class="s '+a.status+'">'+L[a.status]+'</span><button data-t="agency" data-i="'+a.id+'" data-s="'+(a.status=='active'?'blocked':'active')+'">'+(a.status=='active'?'🚫 إيقاف الوكالة':'✅ تفعيل')+'</button><button data-x="'+a.id+'">🗑</button></div>').join('')||'<p>لا وكالات بعد.</p>';
+  $('#ag').innerHTML=D.agencies.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join('');
+  const sb=$('#bg').value;$('#bg').innerHTML=$('#ag').innerHTML;if(sb)$('#bg').value=sb;fillBrand();
+  
+  nm={};sl={};
+  D.agencies.forEach(a=>{nm[a.id]=a.name;sl[a.id]=a.slug});
+  
+  $('#hs').innerHTML=D.houses.map(h=>'<div class="r"><b>'+esc(h.name)+'</b><span>'+esc(nm[h.agency]||'')+' - '+h.n+' غرفة</span><a dir="ltr" href="'+lk(h)+'" target="_blank">'+lk(h)+'</a><button data-qr="'+h.id+'" title="رمز QR والطباعة">📱 QR</button><button data-s2="'+h.id+'">✎</button><select data-h="'+h.id+'">'+['draft','active','blocked'].map(s=>'<option value="'+s+'"'+(s==h.status?' selected':'')+'>'+L[s]+'</option>').join('')+'</select><button data-p="'+h.id+'">🗺</button><button data-d="'+h.id+'">🗑</button></div>').join('')||'<p>لا بيوت بعد.</p>';
+}
+
+function openQr(hid){
+  const h=D.houses.find(x=>x.id==hid);
+  if(!h)return;
+  const fullUrl=location.origin+lk(h);
+  $('#qrtitle').textContent=h.name;
+  $('#qrsub').textContent=(nm[h.agency]||'')+' — امسح الرمز لزيارة العقار افتراضياً';
+  $('#qrlink').textContent=fullUrl;
+  $('#qrarea').innerHTML='';
+  
+  new QRCode($('#qrarea'),{
+    text:fullUrl,
+    width:240,
+    height:240,
+    colorDark:'#0b0b0d',
+    colorLight:'#ffffff',
+    correctLevel:QRCode.CorrectLevel.H
+  });
+  
+  $('#qrmodal').hidden=false;
+
+  $('#qrdown').onclick=()=>{
+    const qrImg=$('#qrarea').querySelector('img')||$('#qrarea').querySelector('canvas');
+    if(!qrImg)return;
+    const cv=document.createElement('canvas');
+    cv.width=800;
+    cv.height=1000;
+    const ctx=cv.getContext('2d');
+    
+    // خلفية بيضاء نقية جاهزة للطباعة
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,cv.width,cv.height);
+    
+    // شريط علوي
+    ctx.fillStyle='#0b0b0d';
+    ctx.font='bold 36px Cairo, sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('MB 360° — جولة افتراضية',400,75);
+    
+    // اسم العقار
+    ctx.fillStyle='#a67c2e';
+    ctx.font='bold 32px Cairo, sans-serif';
+    ctx.fillText(h.name,400,140);
+    
+    // اسم الوكالة
+    ctx.fillStyle='#555555';
+    ctx.font='22px Cairo, sans-serif';
+    ctx.fillText(nm[h.agency]||'وكالة عقارية',400,180);
+    
+    // صورة الـ QR في الوسط
+    ctx.drawImage(qrImg,175,230,450,450);
+    
+    // دعوة للمسح
+    ctx.fillStyle='#111111';
+    ctx.font='bold 26px Cairo, sans-serif';
+    ctx.fillText('امسح الرمز بكاميرا الهاتف للمعاينة المباشرة',400,760);
+    
+    // الرابط
+    ctx.fillStyle='#777777';
+    ctx.font='18px monospace';
+    ctx.fillText(fullUrl,400,815);
+    
+    const a=document.createElement('a');
+    a.download='QR-'+(h.slug||h.id)+'.png';
+    a.href=cv.toDataURL('image/png');
+    a.click();
+  };
+
+  $('#qrcopy').onclick=()=>{
+    navigator.clipboard.writeText(fullUrl).then(()=>alert('تم نسخ الرابط!'));
+  };
+}
+
+$('#qrclose').onclick=()=>{$('#qrmodal').hidden=true};
+
+document.addEventListener('click',async e=>{
+  const b=e.target;
+  if(b.dataset.qr) openQr(b.dataset.qr);
+  if(b.dataset.t){await api('status','POST',{type:b.dataset.t,id:b.dataset.i,status:b.dataset.s});load()}
+  if(b.dataset.p)editPlan(b.dataset.p);
+  if(b.dataset.s2){const s=prompt('رابط البيت الجديد (أحرف إنجليزية وأرقام و-)');if(s){const r=await api('slug','POST',{id:b.dataset.s2,slug:s});if(r.e)alert('الرابط مستعمل أو غير صالح');load()}}
+  if(b.dataset.x&&confirm('حذف هذه الوكالة نهائياً؟')){const r=await api('delagency/'+b.dataset.x,'POST',{});if(r.e)alert('احذف بيوت هذه الوكالة أولاً');load()}
+  if(b.dataset.d&&confirm('حذف هذا البيت نهائياً؟')){await api('del/'+b.dataset.d,'POST',{});load()}
+});
+
 document.addEventListener('change',async e=>{if(e.target.dataset.h){await api('status','POST',{type:'house',id:e.target.dataset.h,status:e.target.value});load()}});
-$('#go').onclick=()=>{tk=$('#tk').value.trim();sessionStorage.tk=tk;load().catch(()=>alert('رمز خاطئ'))};
+$('#go').onclick=()=>{tk=$('#tk').value.trim();sessionStorage.tk=tk;load().catch(()=>alert('رمز خاطئ أو خطأ في الاتصال'))};
 $('#aa').onclick=async()=>{const r=await api('agency','POST',{name:$('#an').value.trim(),slug:$('#as').value.trim()});if(r.e)return alert('الاسم أو الرابط ناقص أو مستعمل');$('#an').value=$('#as').value='';load()};
 $('#up').onclick=async()=>{const f=$('#jf').files[0],ag=$('#ag').value;if(!f||!ag)return alert('اختر الملف والوكالة');
 try{const j=JSON.parse(await f.text()),h=await api('house','POST',{agency:ag,name:j.name,slug:$('#hsg').value.trim()}),rooms=[];let i=0;
 for(const r of j.rooms){msg('رفع '+(++i)+' / '+j.rooms.length+' ...');let img=r.image;if(img.startsWith('data:')){await api('img/'+h.id+'/'+r.id,'PUT',await shrink(img));img='/img/'+h.id+'/'+r.id}
 rooms.push({id:r.id,name:r.name,image:img,dims:r.dims,lon0:r.lon0,desc:r.desc,hotspots:r.hotspots,infos:r.infos})}
 await api('data/'+h.id,'POST',rooms);msg('تم الرفع. البيت «مسودة» ولن يراه أحد حتى تفعّله بعد الدفع.');load()}catch(x){msg('فشل الرفع: تأكد أن الملف هو تصدير صحيح')}};
+
 let E;const snap=v=>Math.round(v*4)/4;
 async function editPlan(id){const h=await api('house/'+id);h.rooms.forEach(r=>{r.dims=r.dims||[6,8,2.6];r.hotspots=r.hotspots||[]});const L=autoLayout(h.rooms,h.plan),dims={};h.rooms.forEach(r=>dims[r.id]=r.dims.slice());
 E={id,rs:L.rs,by:L.by,dr:L.dr,dims,sel:null,mode:0,vb:null};$('#pt').textContent=h.name;$('#pe').hidden=false;pdraw(1)}
