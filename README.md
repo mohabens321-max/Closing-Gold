@@ -24,7 +24,7 @@ mb360/
 
 ## تشغيل محلي
 ```bash
-cp .env.example .env        # عدّل ADMIN_TOKEN
+cp .env.example .env        Mohabens_123
 docker compose up --build   # ثم افتح http://localhost:8080/admin
 ```
 بدون Docker: `pip install -r requirements.txt` ثم `ADMIN_TOKEN=... python app.py`.
@@ -43,7 +43,7 @@ docker compose up --build   # ثم افتح http://localhost:8080/admin
 
 | المتغير | القيمة |
 |---|---|
-| `ADMIN_TOKEN` | كلمة سر طويلة |
+| `Mohabens_123` | كلمة سر طويلة |
 | `STORAGE` | `s3` |
 | `S3_BUCKET` `S3_ENDPOINT` `S3_KEY` `S3_SECRET` | من مزوّد التخزين |
 | `PORT` | `8080` |
