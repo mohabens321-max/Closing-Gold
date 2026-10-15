@@ -3,7 +3,8 @@ import os
 
 
 class Config:
-    ADMIN_TOKEN = os.getenv('Mohabens_123', '')
+  class Config:
+    ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', 'Mohabens_123')
     STORAGE = os.getenv('STORAGE', 'fs')            # fs = ملفات محلية | s3 = خدمة متوافقة مع S3
     DATA_DIR = os.getenv('DATA_DIR', 'data')
     S3_BUCKET = os.getenv('S3_BUCKET', '')
