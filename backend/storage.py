@@ -105,8 +105,9 @@ class Store:
 
 
 def make_store(cfg):
-    if cfg.STORAGE == 's3':
+    # إذا كانت إعدادات S3 موجودة يستعمل S3، وإلا يرجع تلقائياً للتخزين المؤقت المحلي
+    if cfg.STORAGE == 's3' and cfg.S3_BUCKET:
         backend = S3Backend(cfg.S3_BUCKET, cfg.S3_ENDPOINT, cfg.S3_KEY, cfg.S3_SECRET, cfg.S3_REGION)
     else:
-        backend = FileBackend(cfg.DATA_DIR)
+        backend = FileBackend('/tmp/data')
     return Store(backend, cfg.CACHE_SECONDS)
