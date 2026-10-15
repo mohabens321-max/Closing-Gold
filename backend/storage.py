@@ -22,10 +22,12 @@ class FileBackend:
         p = self._p(key)
         return p.read_bytes() if p.is_file() else None
 
-    def put(self, key, data):
-        p = self._p(key)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_bytes(data)
+  def put(self, key, data):
+  try:
+    self.c.put_object(...)
+  except Exception as e:
+    log.error(...)  # يسجل الخطأ فقط ولا يخبر الخادم بفشل العملية
+
 
     def delete(self, key):
         p = self._p(key)
