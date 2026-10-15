@@ -42,10 +42,11 @@ def slugify(s):
 
 @bp.before_request
 def auth():
-    t = Config.Mohabens_123
+    t = Config.ADMIN_TOKEN
     h = request.headers.get('Authorization', '')
     if not t or not hmac.compare_digest(h.encode(), ('Bearer ' + t).encode()):
         return J({'e': 'auth'}, 401)
+
 
 
 def save(h):
