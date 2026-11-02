@@ -5,7 +5,7 @@ import uuid
 
 from flask import Blueprint, current_app, jsonify, request
 
-from .config import DEFAULT_ADMIN_TOKEN, admin_token, admin_token_env
+from .config import Config, DEFAULT_ADMIN_TOKEN, admin_token, admin_token_env
 
 bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 OK = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
