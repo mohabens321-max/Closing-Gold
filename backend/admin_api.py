@@ -118,7 +118,7 @@ def add_house():
     b = body()
     if not OK.match(str(b.get('agency'))) or not fresh('agency/%s.json' % b['agency']):
         return J({'e': 'agency'}, 400)
-    h = {'id': uuid.uuid4().hex[:10], 'agency': b['agency'], 'name': b.get('name') or 'بيت',
+    h = {'id': uuid.uuid4().hex[:10], 'agency': b['agency'], 'name': b.get('name') or 'Maison',
          'status': 'draft', 'rooms': []}
     claim(h, b.get('slug')) or claim(h, 'h-' + h['id'][:6])
     save(h)

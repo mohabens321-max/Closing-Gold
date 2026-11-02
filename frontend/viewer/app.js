@@ -14,10 +14,10 @@ for(let i=0;i<70;i++)A.push({x:Math.random()*c.width,y:Math.random()*c.height,r:
 (function f(){x.clearRect(0,0,c.width,c.height);x.fillStyle=col;x.globalAlpha=.5;A.forEach(p=>{p.y-=p.v;if(p.y<-5){p.y=c.height+5;p.x=Math.random()*c.width}x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()});requestAnimationFrame(f)})()}
 document.body.prepend(e)};
 const logo=b=>b&&b.logo?'<img class="lg" src="'+b.logo+'" alt="">':'';
-fetch('/api/'+K+'/'+P.slice(2).join('/')).then(async r=>{if(!r.ok)return note('هذه الخدمة غير متاحة حالياً');const d=await r.json();brand(d.brand);if(K=='a'&&!P[3]){cat(d);fx(d.brand,d)}else tour(d)}).catch(()=>note('تعذّر الاتصال، حاول مرة أخرى'));
+fetch('/api/'+K+'/'+P.slice(2).join('/')).then(async r=>{if(!r.ok)return note('Ce service est indisponible pour le moment');const d=await r.json();brand(d.brand);if(K=='a'&&!P[3]){cat(d);fx(d.brand,d)}else tour(d)}).catch(()=>note('Connexion impossible, veuillez réessayer'));
 function cat(d){document.body.className='cat';document.title=d.name;$('#cv').remove();$('#hs').remove();const g=document.createElement('div');g.id='grid';g.innerHTML='<h1>'+logo(d.brand)+esc(d.name)+'</h1><div class="gr"></div>';
-d.houses.forEach(h=>{const a=document.createElement('a');a.href=h.slug?'/a/'+P[2]+'/'+h.slug:'/h/'+h.id;a.className='card';if(h.cover)a.style.backgroundImage='url("'+h.cover+'")';a.innerHTML='<div><b>'+esc(h.name)+'</b><span>'+h.n+' غرفة</span></div>';g.lastChild.appendChild(a)});
-if(!d.houses.length)g.innerHTML+='<p>لا توجد جولات منشورة بعد.</p>';document.body.appendChild(g)}
+d.houses.forEach(h=>{const a=document.createElement('a');a.href=h.slug?'/a/'+P[2]+'/'+h.slug:'/h/'+h.id;a.className='card';if(h.cover)a.style.backgroundImage='url("'+h.cover+'")';a.innerHTML='<div><b>'+esc(h.name)+'</b><span>'+h.n+' pièce'+(h.n>1?'s':'')+'</span></div>';g.lastChild.appendChild(a)});
+if(!d.houses.length)g.innerHTML+='<p>Aucune visite publiée pour le moment.</p>';document.body.appendChild(g)}
 function tour(d){
 const VS='varying vec3 vW;void main(){vW=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vW,1.);}',FS='uniform sampler2D map;uniform vec3 uCam,uMin,uMax;uniform float op;varying vec3 vW;void main(){vec3 d=normalize(vW-uCam);vec3 t1=(uMin-uCam)/d,t2=(uMax-uCam)/d;vec3 tf=max(t1,t2);float t=min(min(tf.x,tf.y),tf.z);vec3 p=normalize(uCam+d*t);vec2 uv=vec2(fract(atan(p.z,p.x)/6.2831853),1.-acos(clamp(p.y,-1.,1.))/3.1415927);gl_FragColor=vec4(texture2D(map,uv).rgb,op);}';
 const rooms=d.rooms;rooms.forEach(r=>{r.hotspots=r.hotspots||[];r.infos=r.infos||[];r.dims=r.dims||[6,8,2.6]});
@@ -44,7 +44,7 @@ let PL;const svg=$('#ms');
 function drawPlan(){if(!rooms.length)return;const{rs,by,dr}=autoLayout(rooms,d.plan);
 const x0=Math.min(...rs.map(r=>r.x-r.w/2))-1,z0=Math.min(...rs.map(r=>r.z-r.l/2))-1,W=Math.max(...rs.map(r=>r.x+r.w/2))+1-x0,Hh=Math.max(...rs.map(r=>r.z+r.l/2))+1-z0,sc=100/Math.max(W,Hh);
 svg.setAttribute('viewBox','0 0 '+W*sc+' '+Hh*sc);
-svg.innerHTML=rs.map(r=>{const cx=(r.x-x0)*sc;return'<rect data-id="'+r.id+'" x="'+(r.x-r.w/2-x0)*sc+'" y="'+(r.z-r.l/2-z0)*sc+'" width="'+r.w*sc+'" height="'+r.l*sc+'" rx="1"/><text x="'+cx+'" y="'+(r.z-z0)*sc+'"><tspan>'+esc(r.n)+'</tspan><tspan class="m" x="'+cx+'" dy="4.6">'+r.w.toFixed(1)+'×'+r.l.toFixed(1)+' م</tspan></text>'}).join('')
+svg.innerHTML=rs.map(r=>{const cx=(r.x-x0)*sc;return'<rect data-id="'+r.id+'" x="'+(r.x-r.w/2-x0)*sc+'" y="'+(r.z-r.l/2-z0)*sc+'" width="'+r.w*sc+'" height="'+r.l*sc+'" rx="1"/><text x="'+cx+'" y="'+(r.z-z0)*sc+'"><tspan>'+esc(r.n)+'</tspan><tspan class="m" x="'+cx+'" dy="4.6">'+r.w.toFixed(1)+'×'+r.l.toFixed(1)+' m</tspan></text>'}).join('')
 +dr.map(q=>{const X=(q[0]-x0)*sc,Z=(q[1]-z0)*sc,k=.6*sc;return q[2]=='v'?'<line class="dr" x1="'+X+'" y1="'+(Z-k)+'" x2="'+X+'" y2="'+(Z+k)+'"/>':'<line class="dr" x1="'+(X-k)+'" y1="'+Z+'" x2="'+(X+k)+'" y2="'+Z+'"/>'}).join('')+'<g id="pl"><path d="M0 0L10-5V5Z"/><circle r="2.2"/></g>';
 PL={x0,z0,sc,by}}
 function hl(){svg.querySelectorAll('rect').forEach(e=>e.classList.toggle('on',e.dataset.id==R.id))}
@@ -75,4 +75,4 @@ const KM={KeyW:'u',ArrowUp:'u',KeyS:'d',ArrowDown:'d',KeyA:'l',ArrowLeft:'l',Key
 addEventListener('keydown',e=>{if(KM[e.code]){keys[KM[e.code]]=1;e.preventDefault()}});addEventListener('keyup',e=>KM[e.code]&&(keys[KM[e.code]]=0));
 const J=$('#joy'),KK=$('#jk');let jo=0;const jm=e=>{if(!jo)return;const r=J.getBoundingClientRect();let dx=e.clientX-r.left-52,dy=e.clientY-r.top-52;const L=Math.min(40,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);dx=Math.cos(a)*L;dy=Math.sin(a)*L;KK.style.transform='translate('+dx+'px,'+dy+'px)';joy=[dx/40,-dy/40]};
 J.onpointerdown=e=>{jo=1;J.setPointerCapture(e.pointerId);jm(e)};J.onpointermove=jm;J.onpointerup=J.onpointercancel=()=>{jo=0;joy=[0,0];KK.style.transform=''};
-drawPlan();loop();if(rooms.length)enter(rooms[0].id);else note('هذا البيت لا يحتوي غرفاً بعد')}
+drawPlan();loop();if(rooms.length)enter(rooms[0].id);else note('Cette maison ne contient pas encore de pièces')}
