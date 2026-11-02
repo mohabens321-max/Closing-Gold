@@ -102,17 +102,25 @@ function openQr(hid){
 // فيسبوك كيتعرّف على الصورة كـ360 غير إلا كانت فيها بيانات GPano.
 function withXmp(src,w,h){
   const xmp='<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>'
-   +'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+   +'<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21">'
+   +'<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
    +'<rdf:Description rdf:about="" xmlns:GPano="http://ns.google.com/photos/1.0/panorama/">'
    +'<GPano:UsePanoramaViewer>True</GPano:UsePanoramaViewer>'
+   +'<GPano:StitchingSoftware>MB 360</GPano:StitchingSoftware>'
    +'<GPano:ProjectionType>equirectangular</GPano:ProjectionType>'
+   +'<GPano:PoseHeadingDegrees>0.0</GPano:PoseHeadingDegrees>'
+   +'<GPano:InitialViewHeadingDegrees>0.0</GPano:InitialViewHeadingDegrees>'
+   +'<GPano:InitialViewPitchDegrees>0.0</GPano:InitialViewPitchDegrees>'
+   +'<GPano:InitialViewRollDegrees>0.0</GPano:InitialViewRollDegrees>'
+   +'<GPano:InitialHorizontalFOVDegrees>75.0</GPano:InitialHorizontalFOVDegrees>'
    +'<GPano:CroppedAreaImageWidthPixels>'+w+'</GPano:CroppedAreaImageWidthPixels>'
    +'<GPano:CroppedAreaImageHeightPixels>'+h+'</GPano:CroppedAreaImageHeightPixels>'
    +'<GPano:FullPanoWidthPixels>'+w+'</GPano:FullPanoWidthPixels>'
    +'<GPano:FullPanoHeightPixels>'+h+'</GPano:FullPanoHeightPixels>'
    +'<GPano:CroppedAreaLeftPixels>0</GPano:CroppedAreaLeftPixels>'
    +'<GPano:CroppedAreaTopPixels>0</GPano:CroppedAreaTopPixels>'
-   +'</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
+   +'<GPano:SourcePhotosCount>1</GPano:SourcePhotosCount>'
+   +'</rdf:Description></rdf:RDF></x:xmpmeta>'+' '.repeat(1024)+'<?xpacket end="w"?>';
   const body=new TextEncoder().encode('http://ns.adobe.com/xap/1.0/\0'+xmp);
   const len=body.length+2;
   const out=new Uint8Array(src.length+4+body.length);
@@ -126,14 +134,20 @@ function pano360(blob){
   return new Promise((ok,no)=>{
     const img=new Image();
     img.onload=()=>{
+      // فيسبوك كيقبل غير 2:1 بالضبط، و كيرفض الصور الصغيرة: نرفعوها لـ2048 على الأقل
+      const W=Math.min(6000,Math.max(2048,img.naturalWidth)),H=Math.round(W/2);
       const c=document.createElement('canvas');
-      c.width=img.naturalWidth;c.height=img.naturalHeight;
-      c.getContext('2d').drawImage(img,0,0);
+      c.width=W;c.height=H;
+      const x=c.getContext('2d');
+      x.imageSmoothingQuality='high';
+      x.drawImage(img,0,0,W,H);
       c.toBlob(async b=>{
         if(!b)return no();
         const raw=new Uint8Array(await b.arrayBuffer());
-        ok(new Blob([withXmp(raw,c.width,c.height)],{type:'image/jpeg'}));
-      },'image/jpeg',.9);
+        const out=new Blob([withXmp(raw,W,H)],{type:'image/jpeg'});
+        out.w=W;out.h=H;
+        ok(out);
+      },'image/jpeg',.92);
     };
     img.onerror=no;
     img.src=URL.createObjectURL(blob);
@@ -151,11 +165,11 @@ async function export360(hid){
       a.download='360-'+(h.slug||h.id)+'-'+String(r.name||r.id).replace(/[^\w-]+/g,'_')+'.jpg';
       a.href=URL.createObjectURL(jpg);a.click();
       setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-      msg('Export 360°… '+(++i)+' / '+rooms.length);
+      msg('Export 360°… '+(++i)+' / '+rooms.length+' · '+jpg.w+'×'+jpg.h);
       await new Promise(x=>setTimeout(x,700));
     }catch(e){alert('Échec pour '+(r.name||r.id))}
   }
-  msg('Photos 360° prêtes : publiez-les sur Facebook, elles s’ouvrent en 360° dans le fil.');
+  msg('Photos 360° prêtes. Publiez-les depuis facebook.com sur ordinateur (pas l’appli mobile) : Facebook les ouvre en 360° dans le fil.');
 }
 $('#qrclose').onclick=()=>{$('#qrmodal').hidden=true};
 
