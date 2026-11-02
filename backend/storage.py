@@ -113,5 +113,5 @@ def make_store(cfg):
         log.info('Initializing S3 Backend for bucket: %s', cfg.S3_BUCKET)
         return Store(S3Backend(cfg.S3_BUCKET, cfg.S3_ENDPOINT, cfg.S3_KEY, cfg.S3_SECRET, cfg.S3_REGION), cfg.CACHE_SECONDS)
 
-    log.warning('Fallback to local /tmp storage (temporary on serverless)')
-    return Store(FileBackend('/tmp/data'), cfg.CACHE_SECONDS)
+    log.warning('Fallback to local storage (temporary on serverless)')
+    return Store(FileBackend(cfg.DATA_DIR or '/tmp/data'), cfg.CACHE_SECONDS)

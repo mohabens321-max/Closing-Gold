@@ -23,7 +23,7 @@ async function load(){
   nm={};sl={};
   D.agencies.forEach(a=>{nm[a.id]=a.name;sl[a.id]=a.slug});
   
-  $('#hs').innerHTML=D.houses.map(h=>'<div class="r"><b>'+esc(h.name)+'</b><span>'+esc(nm[h.agency]||'')+' - '+h.n+' pièce'+(h.n>1?'s':'')+'</span><a dir="ltr" href="'+lk(h)+'" target="_blank">'+lk(h)+'</a><button data-qr="'+h.id+'" title="QR code et impression">📱 QR</button><button data-s2="'+h.id+'">✎</button><select data-h="'+h.id+'">'+['draft','active','blocked'].map(s=>'<option value="'+s+'"'+(s==h.status?' selected':'')+'>'+L[s]+'</option>').join('')+'</select><button data-p="'+h.id+'">🗺</button><button data-d="'+h.id+'">🗑</button></div>').join('')||'<p>Aucune maison pour le moment.</p>';
+  $('#hs').innerHTML=D.houses.map(h=>'<div class="r"><b>'+esc(h.name)+'</b><span>'+esc(nm[h.agency]||'')+' - '+h.n+' pièce'+(h.n>1?'s':'')+'</span><a dir="ltr" href="'+lk(h)+'" target="_blank">'+lk(h)+'</a><button data-qr="'+h.id+'" title="QR code et impression">📱 QR</button><button data-fb="'+h.id+'" title="Photos 360° pour Facebook">🌐</button><button data-s2="'+h.id+'">✎</button><select data-h="'+h.id+'">'+['draft','active','blocked'].map(s=>'<option value="'+s+'"'+(s==h.status?' selected':'')+'>'+L[s]+'</option>').join('')+'</select><button data-p="'+h.id+'">🗺</button><button data-d="'+h.id+'">🗑</button></div>').join('')||'<p>Aucune maison pour le moment.</p>';
 }
 
 function openQr(hid){
@@ -98,11 +98,71 @@ function openQr(hid){
   };
 }
 
+// ---- Facebook 360 : photo équirectangulaire avec les métadonnées GPano ----
+// فيسبوك كيتعرّف على الصورة كـ360 غير إلا كانت فيها بيانات GPano.
+function withXmp(src,w,h){
+  const xmp='<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>'
+   +'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+   +'<rdf:Description rdf:about="" xmlns:GPano="http://ns.google.com/photos/1.0/panorama/">'
+   +'<GPano:UsePanoramaViewer>True</GPano:UsePanoramaViewer>'
+   +'<GPano:ProjectionType>equirectangular</GPano:ProjectionType>'
+   +'<GPano:CroppedAreaImageWidthPixels>'+w+'</GPano:CroppedAreaImageWidthPixels>'
+   +'<GPano:CroppedAreaImageHeightPixels>'+h+'</GPano:CroppedAreaImageHeightPixels>'
+   +'<GPano:FullPanoWidthPixels>'+w+'</GPano:FullPanoWidthPixels>'
+   +'<GPano:FullPanoHeightPixels>'+h+'</GPano:FullPanoHeightPixels>'
+   +'<GPano:CroppedAreaLeftPixels>0</GPano:CroppedAreaLeftPixels>'
+   +'<GPano:CroppedAreaTopPixels>0</GPano:CroppedAreaTopPixels>'
+   +'</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
+  const body=new TextEncoder().encode('http://ns.adobe.com/xap/1.0/\0'+xmp);
+  const len=body.length+2;
+  const out=new Uint8Array(src.length+4+body.length);
+  out.set(src.subarray(0,2),0);
+  out[2]=0xFF;out[3]=0xE1;out[4]=(len>>8)&255;out[5]=len&255;
+  out.set(body,6);
+  out.set(src.subarray(2),6+body.length);
+  return out;
+}
+function pano360(blob){
+  return new Promise((ok,no)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');
+      c.width=img.naturalWidth;c.height=img.naturalHeight;
+      c.getContext('2d').drawImage(img,0,0);
+      c.toBlob(async b=>{
+        if(!b)return no();
+        const raw=new Uint8Array(await b.arrayBuffer());
+        ok(new Blob([withXmp(raw,c.width,c.height)],{type:'image/jpeg'}));
+      },'image/jpeg',.9);
+    };
+    img.onerror=no;
+    img.src=URL.createObjectURL(blob);
+  });
+}
+async function export360(hid){
+  const h=await api('house/'+hid),rooms=h.rooms||[];
+  if(!rooms.length)return alert('Aucune pièce à exporter');
+  if(!confirm('Exporter '+rooms.length+' photo(s) 360° pour Facebook ?\n\nCe sont des copies : une fois publiées, bloquer la maison ici ne les retire pas de Facebook.'))return;
+  let i=0;
+  for(const r of rooms){
+    try{
+      const jpg=await pano360(await (await fetch(r.image)).blob());
+      const a=document.createElement('a');
+      a.download='360-'+(h.slug||h.id)+'-'+String(r.name||r.id).replace(/[^\w-]+/g,'_')+'.jpg';
+      a.href=URL.createObjectURL(jpg);a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+      msg('Export 360°… '+(++i)+' / '+rooms.length);
+      await new Promise(x=>setTimeout(x,700));
+    }catch(e){alert('Échec pour '+(r.name||r.id))}
+  }
+  msg('Photos 360° prêtes : publiez-les sur Facebook, elles s’ouvrent en 360° dans le fil.');
+}
 $('#qrclose').onclick=()=>{$('#qrmodal').hidden=true};
 
 document.addEventListener('click',async e=>{
   const b=e.target;
   if(b.dataset.qr) openQr(b.dataset.qr);
+  if(b.dataset.fb) export360(b.dataset.fb);
   if(b.dataset.t){await api('status','POST',{type:b.dataset.t,id:b.dataset.i,status:b.dataset.s});load()}
   if(b.dataset.p)editPlan(b.dataset.p);
   if(b.dataset.s2){const s=prompt('Nouvel identifiant de la maison (lettres, chiffres et -)');if(s){const r=await api('slug','POST',{id:b.dataset.s2,slug:s});if(r.e)alert('Identifiant déjà utilisé ou invalide');load()}}

@@ -65,6 +65,13 @@ U1.map.value=tex;goal=0;cp=[0,0,0];R=r;const[a,b]=box();U1.uMin.value.set(...a);
 catch(e){goal=0;tFov=75}
 $('#ld').classList.remove('on');setTimeout(()=>{walking=0;$('#hs').style.opacity=1},had?1100:0)}
 $('#bar').innerHTML=logo(d.brand)+esc(d.agency+' — '+d.name);$('#bar').style.display='block';$('#rw').style.display='block';$('#zc').style.display='flex';$('#joy').classList.add('on');
+const shareUrl=location.origin+location.pathname;
+$('#shf').href='https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(shareUrl);
+$('#shw').href='https://wa.me/?text='+encodeURIComponent(d.name+' — '+d.agency+'\n'+shareUrl);
+$('#shb').onclick=e=>{e.stopPropagation();$('#shp').classList.toggle('on')};
+$('#shc').onclick=async()=>{try{await navigator.clipboard.writeText(shareUrl);$('#shc').textContent='Lien copié !';setTimeout(()=>{$('#shc').textContent='Copier le lien'},1600)}catch(_){}};
+document.addEventListener('click',e=>{if(!e.target.closest('#sh'))$('#shp').classList.remove('on')});
+$('#sh').classList.add('on');
 const cv=$('#cv'),Q=new Map();let pd=0,pf=75,sx,sy,sl,st;const dist=()=>{const a=[...Q.values()];return Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])||1};
 cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);Q.set(e.pointerId,[e.clientX,e.clientY]);seen=1;if(Q.size==1){sx=e.clientX;sy=e.clientY;sl=tLon;st=tLat}else{pd=dist();pf=tFov}};
 cv.onpointermove=e=>{if(!Q.has(e.pointerId))return;Q.set(e.pointerId,[e.clientX,e.clientY]);if(Q.size==2){tFov=cl(pf*pd/dist(),30,100);return}tLon=sl-(e.clientX-sx)*.15;tLat=st+(e.clientY-sy)*.15};
