@@ -111,7 +111,12 @@ document.addEventListener('click',async e=>{
 });
 
 document.addEventListener('change',async e=>{if(e.target.dataset.h){await api('status','POST',{type:'house',id:e.target.dataset.h,status:e.target.value});load()}});
-$('#go').onclick=()=>{tk=$('#tk').value.trim();sessionStorage.tk=tk;load().catch(()=>alert('رمز خاطئ أو خطأ في الاتصال'))};
+$('#go').onclick=async()=>{tk=$('#tk').value.trim();sessionStorage.tk=tk;
+try{await load()}catch(e){
+  let m='رمز خاطئ';
+  try{const h=await (await fetch('/api/admin/ping')).json();if(!h.configured)m='الخادم لا يستعمل ADMIN_TOKEN (يعمل بالمفتاح الافتراضي). عيّن ADMIN_TOKEN في Vercel ثم أعد النشر'}catch(_){}
+  alert(m);
+}};
 $('#aa').onclick=async()=>{const r=await api('agency','POST',{name:$('#an').value.trim(),slug:$('#as').value.trim()});if(r.e)return alert('الاسم أو الرابط ناقص أو مستعمل');$('#an').value=$('#as').value='';load()};
 $('#up').onclick=async()=>{const f=$('#jf').files[0],ag=$('#ag').value;if(!f||!ag)return alert('اختر الملف والوكالة');
 try{const j=JSON.parse(await f.text()),h=await api('house','POST',{agency:ag,name:j.name,slug:$('#hsg').value.trim()}),rooms=[];let i=0;

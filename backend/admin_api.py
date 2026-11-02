@@ -5,7 +5,7 @@ import uuid
 
 from flask import Blueprint, current_app, jsonify, request
 
-from .config import Config
+from .config import DEFAULT_ADMIN_TOKEN, admin_token, admin_token_env
 
 bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 OK = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
@@ -42,10 +42,19 @@ def slugify(s):
 
 @bp.before_request
 def auth():
-    t = Config.ADMIN_TOKEN
-    h = request.headers.get('Authorization', '')
-    if not t or not hmac.compare_digest(h.encode(), ('Bearer ' + t).encode()):
+    # مسار التشخيص العمومي لا يحتاج رمزاً.
+    if request.endpoint == 'admin.ping':
+        return None
+    t = admin_token() or DEFAULT_ADMIN_TOKEN
+    h = request.headers.get('Authorization', '').strip()
+    if not hmac.compare_digest(h.encode(), ('Bearer ' + t).encode()):
         return J({'e': 'auth'}, 401)
+
+
+@bp.get('/ping')
+def ping():
+    """هل عُيِّن رمز مخصص على الخادم؟ (بدون كشف قيمته)."""
+    return J({'ok': True, 'configured': bool(admin_token_env())})
 
 
 def save(h):

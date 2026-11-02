@@ -1,6 +1,35 @@
 """إعدادات المشروع من متغيرات البيئة."""
 import os
 
+# كلمة السر الافتراضية للوحة التحكم. تُستعمل فقط إذا لم يُعيَّن أي متغير بيئة،
+# حتى لا تبقى اللوحة مقفولة نهائياً إذا نُسي الإعداد.
+DEFAULT_ADMIN_TOKEN = 'Mohabens_123'
+
+# أسماء متغيرات البيئة المقبولة، بالترتيب.
+TOKEN_ENV = ('ADMIN_TOKEN', 'ADMIN_PASSWORD', 'ADMIN_PASS', 'ADMIN_KEY')
+
+
+def _clean(value):
+    """ينظّف القيمة: مسافات زائدة، أسطر، علامات تنصيص لصقها المستخدم."""
+    return (value or '').strip().strip('"').strip("'").strip()
+
+
+def admin_token():
+    """الرمز السري الحالي، يُقرأ عند كل طلب حتى تُطبَّق تغييرات البيئة."""
+    for name in TOKEN_ENV:
+        value = _clean(os.getenv(name))
+        if value:
+            return value
+    return ''
+
+
+def admin_token_env():
+    """اسم متغير البيئة المستعمل، أو '' إذا كنا على القيمة الافتراضية."""
+    for name in TOKEN_ENV:
+        if _clean(os.getenv(name)):
+            return name
+    return ''
+
 
 class Config:
     ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '')
