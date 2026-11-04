@@ -35,7 +35,8 @@ body{margin:0;background:#000;color:var(--tx,#f2f0ec);font:400 16px/1.7 var(--f,
 #ip .ipw{display:none;margin-top:14px;padding:11px;border-radius:12px;background:var(--ac);color:var(--on);text-align:center;font-weight:800;text-decoration:none;flex:none}
 #ip .ipw:hover{filter:brightness(1.06)}
 @media(max-width:700px){#ip{top:auto;bottom:118px;left:10px;right:10px;width:auto;max-height:58vh}}
-@media(max-height:640px){#ip{max-height:calc(100vh - 130px)}#ip .ipd{-webkit-line-clamp:3}}
+@media(max-height:640px){#ip{max-height:calc(100vh - 130px)}#ip .ipd{-webkit-line-clamp:3}
+#ip .ipg{grid-template-columns:repeat(4,1fr);gap:6px}#ip .ipg div{padding:6px 9px}#ip .ipg b{font-size:14px}}
 .card em{font-style:normal;color:var(--ac);font-weight:800;font-size:14px;margin-top:2px}
 #ld{display:none;position:fixed;left:50%;top:50%;width:46px;height:46px;margin:-23px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:var(--ac);animation:sp 1s linear infinite}#ld.on{display:block}@keyframes sp{to{transform:rotate(360deg)}}
 #msg{display:none;position:fixed;inset:0;z-index:8;align-items:center;justify-content:center;background:var(--bg,#0b0b0d);color:var(--ac);font-weight:700;font-size:20px;text-align:center;padding:24px}
