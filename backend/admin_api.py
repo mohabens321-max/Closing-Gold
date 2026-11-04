@@ -15,6 +15,7 @@ FONTS = ['Cairo', 'Tajawal', 'Almarai', 'Noto Kufi Arabic', 'El Messiri', 'Reem 
          'IBM Plex Sans Arabic', 'Poppins', 'Playfair Display']
 FXS = ['none', 'flow', 'aurora', 'dots', 'pan', 'custom']
 STATUS = ['draft', 'active', 'blocked']
+TYPES = ['Appartement', 'Villa', 'Duplex', 'Studio', 'Terrain', 'Local', 'Bureau', 'Ferme', 'Chalet']
 
 
 def S():
@@ -61,8 +62,10 @@ def save(h):
     S().putj('house/%s.json' % h['id'], h)
     k = 'idx/%s.json' % h['agency']
     ix = fresh(k) or []
+    i = h.get('info') or {}
     e = {'id': h['id'], 'name': h['name'], 'status': h['status'], 'slug': h.get('slug', ''),
-         'n': len(h['rooms']), 'cover': h['rooms'][0].get('image', '') if h['rooms'] else ''}
+         'n': len(h['rooms']), 'cover': h['rooms'][0].get('image', '') if h['rooms'] else '',
+         'price': i.get('price', ''), 'type': i.get('type', '')}
     for i, x in enumerate(ix):
         if x['id'] == h['id']:
             ix[i] = e
@@ -99,7 +102,10 @@ def listing():
     return J({'agencies': [a for a in ags if a],
               'houses': [{'id': h['id'], 'agency': h['agency'], 'name': h['name'], 'status': h['status'],
                           'slug': h.get('slug', ''), 'n': len(h['rooms']),
-                          'cover': (h['rooms'][0].get('image', '') if h['rooms'] else '')} for h in hs if h]})
+                          'cover': (h['rooms'][0].get('image', '') if h['rooms'] else ''),
+                          'price': (h.get('info') or {}).get('price', ''),
+                          'type': (h.get('info') or {}).get('type', ''),
+                          'desc': bool((h.get('info') or {}).get('desc'))} for h in hs if h]})
 
 
 @bp.post('/agency')
@@ -218,6 +224,36 @@ def set_bg(aid):
     a['bgType'] = request.mimetype
     S().putj('agency/%s.json' % aid, a)
     return J({'ok': 1})
+
+
+@bp.post('/info/<hid>')
+def set_info(hid):
+    """Fiche descriptive de la maison : texte + quelques informations clés.
+    Tout est optionnel ; un champ vide est simplement retiré."""
+    h = fresh('house/%s.json' % hid) if OK.match(hid) else None
+    if not h:
+        return J({'e': 1}, 404)
+    b = body()
+    info = {}
+    desc = str(b.get('desc') or '').strip()[:4000]
+    if desc:
+        info['desc'] = desc
+    if b.get('type') in TYPES:
+        info['type'] = b['type']
+    for k, n in (('price', 40), ('surface', 20), ('floor', 20), ('address', 140), ('phone', 40)):
+        v = str(b.get(k) or '').strip()[:n]
+        if v:
+            info[k] = v
+    for k in ('beds', 'baths'):
+        try:
+            v = int(b.get(k) or 0)
+            if 0 < v < 100:
+                info[k] = v
+        except (TypeError, ValueError):
+            pass
+    h['info'] = info
+    save(h)
+    return J({'ok': 1, 'info': info})
 
 
 @bp.post('/plan/<hid>')

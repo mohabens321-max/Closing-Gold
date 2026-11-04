@@ -42,7 +42,8 @@ def agency_by_slug(slug):
 
 
 def payload(h, a):
-    return {'name': h['name'], 'agency': a['name'], 'brand': brand(a), 'plan': h.get('plan'), 'rooms': h['rooms']}
+    return {'name': h['name'], 'agency': a['name'], 'brand': brand(a), 'plan': h.get('plan'),
+            'info': h.get('info') or {}, 'rooms': h['rooms']}
 
 
 @bp.get('/api/a/<path:rest>')

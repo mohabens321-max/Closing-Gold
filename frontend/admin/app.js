@@ -20,7 +20,8 @@ const ICO={
   qr:'<svg viewBox="0 0 24 24" '+S+'><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M21 21h-3M21 17v-3M17 21h-3"/></svg>',
   globe:'<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg>',
   pencil:'<svg viewBox="0 0 24 24" '+S+'><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
-  map:'<svg viewBox="0 0 24 24" '+S+'><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg>'
+  map:'<svg viewBox="0 0 24 24" '+S+'><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg>',
+  info:'<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>'
 };
 
 function toast(text,kind){
@@ -64,9 +65,10 @@ function renderHouses(){
     return '<div class="hrow">'
       +'<div class="thumb'+(live?'':' ph')+'"'+(live?' style="background-image:url('+esc(h.cover)+')"':'')+'></div>'
       +'<div class="meta"><b>'+esc(h.name)+'</b>'
-        +'<span>'+esc(nm[h.agency]||'')+' · '+h.n+' pièce'+(h.n>1?'s':'')+'</span>'
+        +'<span>'+esc(nm[h.agency]||'')+' · '+h.n+' pièce'+(h.n>1?'s':'')+(h.price?' · '+esc(h.price):'')+'</span>'
         +'<a class="lnk" dir="ltr" href="'+lk(h)+'" target="_blank" rel="noreferrer">'+lk(h)+'</a></div>'
       +'<div class="acts">'
+        +'<button class="btn icon'+(h.desc?' has':'')+'" data-inf="'+h.id+'" title="'+(h.desc?'Modifier la description et les informations':'Ajouter une description')+'">'+ICO.info+'</button>'
         +'<button class="btn icon" data-qr="'+h.id+'" title="QR code et impression">'+ICO.qr+'</button>'
         +'<button class="btn icon" data-fb="'+h.id+'" title="Photos 360° pour Facebook">'+ICO.globe+'</button>'
         +'<button class="btn icon" data-s2="'+h.id+'" title="Modifier l\'identifiant">'+ICO.pencil+'</button>'
@@ -239,8 +241,43 @@ async function export360(hid){
 }
 $('#qrclose').onclick=()=>{$('#qrmodal').hidden=true};
 
+// ---- fiche d'informations de la maison ----
+let IH='';
+async function openInfo(hid){
+  const h=await api('house/'+hid);
+  if(!h||h.e)return toast('Maison introuvable','err');
+  const i=h.info||{};
+  IH=hid;
+  $('#ifname').textContent=(nm[h.agency]||'')+' · /a/'+(sl[h.agency]||'')+'/'+(h.slug||h.id);
+  $('#i_type').value=i.type||'';
+  $('#i_price').value=i.price||'';
+  $('#i_surface').value=i.surface||'';
+  $('#i_floor').value=i.floor||'';
+  $('#i_beds').value=i.beds||'';
+  $('#i_baths').value=i.baths||'';
+  $('#i_address').value=i.address||'';
+  $('#i_phone').value=i.phone||'';
+  $('#i_desc').value=i.desc||'';
+  $('#infom').hidden=false;
+  $('#i_price').focus();
+}
+$('#i_cancel').onclick=()=>{$('#infom').hidden=true};
+$('#infom').onclick=e=>{if(e.target.id=='infom')$('#infom').hidden=true};
+$('#i_save').onclick=async()=>{
+  if(!IH)return;
+  const r=await api('info/'+IH,'POST',{
+    type:$('#i_type').value,price:$('#i_price').value.trim(),surface:$('#i_surface').value.trim(),
+    floor:$('#i_floor').value.trim(),beds:$('#i_beds').value,baths:$('#i_baths').value,
+    address:$('#i_address').value.trim(),phone:$('#i_phone').value.trim(),desc:$('#i_desc').value.trim()
+  });
+  if(r.ok){$('#infom').hidden=true;toast('Informations enregistrées','ok');load()}
+  else toast("Échec de l'enregistrement",'err');
+};
+addEventListener('keydown',e=>{if(e.key=='Escape'&&!$('#infom').hidden){$('#infom').hidden=true}});
+
 document.addEventListener('click',async e=>{
   const b=e.target;
+  if(b.dataset.inf) openInfo(b.dataset.inf);
   if(b.dataset.qr) openQr(b.dataset.qr);
   if(b.dataset.fb) export360(b.dataset.fb);
   if(b.dataset.t){await api('status','POST',{type:b.dataset.t,id:b.dataset.i,status:b.dataset.s});load()}

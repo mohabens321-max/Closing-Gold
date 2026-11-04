@@ -133,6 +133,36 @@
   </div>
 </div>
 
+<div id="infom" hidden>
+  <div class="infobox">
+    <div class="info-head">
+      <h3>Informations de la maison</h3>
+      <span id="ifname" class="muted small" dir="ltr"></span>
+    </div>
+    <div class="info-body">
+    <div class="grid2">
+      <label>Type de bien
+        <select id="i_type"><option value="">—</option><option>Appartement</option><option>Villa</option><option>Duplex</option><option>Studio</option><option>Terrain</option><option>Local</option><option>Bureau</option><option>Ferme</option><option>Chalet</option></select>
+      </label>
+      <label>Prix<input id="i_price" placeholder="12 500 000 DA"></label>
+      <label>Surface (m²)<input id="i_surface" inputmode="numeric" placeholder="120"></label>
+      <label>Étage<input id="i_floor" placeholder="3"></label>
+      <label>Chambres<input id="i_beds" type="number" min="0" max="99" placeholder="3"></label>
+      <label>Salles de bain<input id="i_baths" type="number" min="0" max="99" placeholder="2"></label>
+      <label>Adresse<input id="i_address" placeholder="Hydra, Alger"></label>
+      <label>WhatsApp<input id="i_phone" inputmode="tel" placeholder="+213 6 12 34 56 78"></label>
+    </div>
+    <label class="full">Description
+      <textarea id="i_desc" rows="5" placeholder="Décrivez la maison : exposition, rénovation, quartier, commodités…"></textarea>
+    </label>
+    </div>
+    <div class="info-foot">
+      <button class="btn ghost" id="i_cancel">Annuler</button>
+      <button class="btn primary" id="i_save">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script src="/static/shared/layout.js"></script>

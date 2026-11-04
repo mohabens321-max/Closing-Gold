@@ -67,11 +67,21 @@ def create_app():
 
     def house_meta(h, a):
         rooms = h.get('rooms') or []
+        info = h.get('info') or {}
         image = '/img/%s/%s' % (h['id'], rooms[0]['id']) if rooms else None
+        # Le texte de la fiche sert d'aperçu sur Facebook / WhatsApp : c'est la
+        # première chose que lit le client avant de cliquer.
+        desc = ' '.join(str(info.get('desc') or '').split())
+        if not desc:
+            desc = 'Visite virtuelle 360° · %d pièce%s · %s' % (len(rooms), 's' if len(rooms) > 1 else '', a['name'])
+        elif len(desc) > 180:
+            desc = desc[:177].rstrip() + '…'
+        if info.get('price'):
+            desc = '%s — %s' % (info['price'], desc)
         return dict(
             title='%s — %s' % (h['name'], a['name']),
             site=a['name'],
-            desc='Visite virtuelle 360° · %d pièce%s · %s' % (len(rooms), 's' if len(rooms) > 1 else '', a['name']),
+            desc=desc,
             image=image,
         )
 

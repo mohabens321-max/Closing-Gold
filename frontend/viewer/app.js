@@ -16,7 +16,7 @@ document.body.prepend(e)};
 const logo=b=>b&&b.logo?'<img class="lg" src="'+b.logo+'" alt="">':'';
 fetch('/api/'+K+'/'+P.slice(2).join('/')).then(async r=>{if(!r.ok)return note('Ce service est indisponible pour le moment');const d=await r.json();brand(d.brand);if(K=='a'&&!P[3]){cat(d);fx(d.brand,d)}else tour(d)}).catch(()=>note('Connexion impossible, veuillez réessayer'));
 function cat(d){document.body.className='cat';document.title=d.name;$('#cv').remove();$('#hs').remove();const g=document.createElement('div');g.id='grid';g.innerHTML='<h1>'+logo(d.brand)+esc(d.name)+'</h1><div class="gr"></div>';
-d.houses.forEach(h=>{const a=document.createElement('a');a.href=h.slug?'/a/'+P[2]+'/'+h.slug:'/h/'+h.id;a.className='card';if(h.cover)a.style.backgroundImage='url("'+h.cover+'")';a.innerHTML='<div><b>'+esc(h.name)+'</b><span>'+h.n+' pièce'+(h.n>1?'s':'')+'</span></div>';g.lastChild.appendChild(a)});
+d.houses.forEach(h=>{const a=document.createElement('a');a.href=h.slug?'/a/'+P[2]+'/'+h.slug:'/h/'+h.id;a.className='card';if(h.cover)a.style.backgroundImage='url("'+h.cover+'")';a.innerHTML='<div><b>'+esc(h.name)+'</b><span>'+(h.type?esc(h.type)+' · ':'')+h.n+' pièce'+(h.n>1?'s':'')+'</span>'+(h.price?'<em>'+esc(h.price)+'</em>':'')+'</div>';g.lastChild.appendChild(a)});
 if(!d.houses.length)g.innerHTML+='<p>Aucune visite publiée pour le moment.</p>';document.body.appendChild(g)}
 function tour(d){
 const VS='varying vec3 vW;void main(){vW=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vW,1.);}',FS='uniform sampler2D map;uniform vec3 uCam,uMin,uMax;uniform float op;varying vec3 vW;void main(){vec3 d=normalize(vW-uCam);vec3 t1=(uMin-uCam)/d,t2=(uMax-uCam)/d;vec3 tf=max(t1,t2);float t=min(min(tf.x,tf.y),tf.z);vec3 p=normalize(uCam+d*t);vec2 uv=vec2(fract(atan(p.z,p.x)/6.2831853),1.-acos(clamp(p.y,-1.,1.))/3.1415927);gl_FragColor=vec4(texture2D(map,uv).rgb,op);}';
@@ -64,7 +64,8 @@ if(had){if(U2.map.value&&U2.map.value!==U1.map.value)U2.map.value.dispose();U2.m
 U1.map.value=tex;goal=0;cp=[0,0,0];R=r;const[a,b]=box();U1.uMin.value.set(...a);U1.uMax.value.set(...b);if(!dw){tLon=lon=r.lon0??180;tLat=lat=0}tFov=75;rail();drawHS();hl()}
 catch(e){goal=0;tFov=75}
 $('#ld').classList.remove('on');setTimeout(()=>{walking=0;$('#hs').style.opacity=1},had?1100:0)}
-$('#bar').innerHTML=logo(d.brand)+esc(d.agency+' — '+d.name);$('#bar').style.display='block';$('#rw').style.display='block';$('#zc').style.display='flex';$('#joy').classList.add('on');
+const IF=d.info||{};
+$('#bar').innerHTML=logo(d.brand)+'<span>'+esc(d.agency+' — '+d.name)+'</span>'+(IF.price?'<span class="bp">'+esc(IF.price)+'</span>':'');$('#bar').style.display='block';$('#rw').style.display='block';$('#zc').style.display='flex';$('#joy').classList.add('on');
 const shareUrl=location.origin+location.pathname;
 $('#shf').href='https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(shareUrl);
 $('#shw').href='https://wa.me/?text='+encodeURIComponent(d.name+' — '+d.agency+'\n'+shareUrl);
@@ -72,6 +73,25 @@ $('#shb').onclick=e=>{e.stopPropagation();$('#shp').classList.toggle('on')};
 $('#shc').onclick=async()=>{try{await navigator.clipboard.writeText(shareUrl);$('#shc').textContent='Lien copié !';setTimeout(()=>{$('#shc').textContent='Copier le lien'},1600)}catch(_){}};
 document.addEventListener('click',e=>{if(!e.target.closest('#sh'))$('#shp').classList.remove('on')});
 $('#sh').classList.add('on');
+// ---- fiche d'informations (description + caractéristiques) ----
+(function(){
+  const g=[];
+  if(IF.surface)g.push(['Surface',IF.surface+' m²']);
+  if(IF.beds)g.push(['Chambres',IF.beds]);
+  if(IF.baths)g.push(['Salles de bain',IF.baths]);
+  if(IF.floor)g.push(['Étage',IF.floor]);
+  if(!(IF.desc||IF.price||IF.type||IF.address||g.length)){$('#ifb').style.display='none';return}
+  const tel=String(IF.phone||'').replace(/[^\d]/g,'');
+  $('#ipb').innerHTML=
+    (IF.type||IF.price?'<div class="ipt">'+(IF.type?'<span>'+esc(IF.type)+'</span>':'')+(IF.price?'<b>'+esc(IF.price)+'</b>':'')+'</div>':'')
+    +(g.length?'<div class="ipg">'+g.map(r=>'<div><span>'+esc(r[0])+'</span><b>'+esc(r[1])+'</b></div>').join('')+'</div>':'')
+    +(IF.address?'<p class="ipa"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>'+esc(IF.address)+'</p>':'')
+    +(IF.desc?'<p class="ipd">'+esc(IF.desc)+'</p>':'')
+    +(tel?'<a class="ipw" target="_blank" rel="noreferrer" href="https://wa.me/'+tel+'?text='+encodeURIComponent(d.name+' — '+shareUrl)+'">Contacter sur WhatsApp</a>':'');
+  $('#ifb').onclick=e=>{e.stopPropagation();$('#ip').classList.toggle('on')};
+  $('#ipx').onclick=()=>$('#ip').classList.remove('on');
+  addEventListener('keydown',e=>{if(e.key=='Escape')$('#ip').classList.remove('on')});
+})();
 const cv=$('#cv'),Q=new Map();let pd=0,pf=75,sx,sy,sl,st;const dist=()=>{const a=[...Q.values()];return Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])||1};
 cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);Q.set(e.pointerId,[e.clientX,e.clientY]);seen=1;if(Q.size==1){sx=e.clientX;sy=e.clientY;sl=tLon;st=tLat}else{pd=dist();pf=tFov}};
 cv.onpointermove=e=>{if(!Q.has(e.pointerId))return;Q.set(e.pointerId,[e.clientX,e.clientY]);if(Q.size==2){tFov=cl(pf*pd/dist(),30,100);return}tLon=sl-(e.clientX-sx)*.15;tLat=st+(e.clientY-sy)*.15};
