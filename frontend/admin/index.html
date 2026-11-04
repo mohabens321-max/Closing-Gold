@@ -1,41 +1,139 @@
-<!DOCTYPE html><html lang="fr" dir="ltr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Administration</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<!DOCTYPE html><html lang="fr" dir="ltr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="color-scheme" content="dark"><title>Administration — MB 360°</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/admin/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<style>
-#qrmodal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:99;display:flex;align-items:center;justify-content:center;padding:16px}
-#qrmodal[hidden]{display:none}
-.qrbox{background:#17171b;border:1px solid #c9a96a;border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
-.qrcanvas{background:#fff;padding:12px;border-radius:12px;display:inline-block}
-</style>
 </head><body>
-<div id="login"><input id="tk" type="password" placeholder="Mot de passe administrateur"><button class="g" id="go">Entrer</button></div>
+
+<div id="login">
+  <div class="login-card">
+    <div class="brandmark"><span>MB</span>360°</div>
+    <h1>Administration</h1>
+    <p class="muted">Gérez vos agences, vos maisons et vos visites 360°.</p>
+    <input id="tk" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password">
+    <button class="btn primary block" id="go">Entrer</button>
+    <p class="muted tiny">Accès réservé. Toute tentative est journalisée.</p>
+  </div>
+</div>
+
 <div id="app" hidden>
-<h1>Administration</h1>
-<h2>Agences</h2><div id="ags"></div>
-<div class="row"><input id="an" placeholder="Nom de l'agence"><input id="as" placeholder="Identifiant dans l'URL, ex. agence-nour"><button class="g" id="aa">Ajouter l'agence</button></div>
-<h2>Importer une maison</h2>
-<p style="color:rgba(242,240,236,.6);margin:0">Choisissez le fichier d'export (⬇ Exporter) de votre plateforme de conception, puis l'agence. La maison est importée en brouillon.</p>
-<div class="row"><input type="file" id="jf" accept=".json"><select id="ag"></select><input id="hsg" placeholder="Identifiant de la maison, ex. villa-hydra"><button class="g" id="up">Importer</button></div><div id="msg"></div>
-<div id="pe" hidden><div class="pb"><b id="pt"></b><button id="pdoor">🚪 Portes (ajouter/supprimer)</button><label>Largeur m <input id="pw" type="number" step=".1" min="1"></label><label>Longueur m <input id="pl2" type="number" step=".1" min="1"></label><label>Hauteur m <input id="ph" type="number" step=".1" min="1"></label><button id="pfit">Ajuster</button><button class="g" id="psave">Enregistrer le plan</button><button id="pclose">Fermer</button></div><svg id="pc"></svg></div>
-<h2>Identité de l'agence</h2><div class="row"><select id="bg"></select><input type="color" id="bc" value="#c9a96a" style="padding:2px;height:42px;width:56px"><select id="bf"><option>Cairo</option><option>Tajawal</option><option>Almarai</option><option>Noto Kufi Arabic</option><option>El Messiri</option><option>Reem Kufi</option><option>Amiri</option><option>IBM Plex Sans Arabic</option><option value="Poppins">Poppins (latin)</option><option value="Playfair Display">Playfair Display (latin)</option></select><input type="file" id="lf" accept="image/*"><button class="g" id="bs">Enregistrer l'identité</button></div><div class="row"><label>Fond <input type="color" id="bb" value="#0b0b0d"></label><label>Texte <input type="color" id="bt" value="#f2f0ec"></label><select id="be"><option value="none">Fond fixe</option><option value="flow">Dégradé animé</option><option value="aurora">Aurore animée</option><option value="dots">Particules montantes</option><option value="pan">Panorama animé</option><option value="custom">Fichier personnalisé : vidéo ou image</option></select><input type="file" id="bk" accept="image/*,video/mp4,video/webm"></div>
-<div id="msg2" style="color:#c9a96a;margin-top:8px"></div>
-<h2>Maisons</h2><div id="hs"></div>
+  <aside id="side">
+    <div class="brandmark"><span>MB</span>360°</div>
+    <nav id="nav">
+      <a href="#s-overview" class="nav on"><i>◧</i> Vue d'ensemble</a>
+      <a href="#s-agencies" class="nav"><i>◈</i> Agences</a>
+      <a href="#s-import" class="nav"><i>⬆</i> Importer</a>
+      <a href="#s-brand" class="nav"><i>◐</i> Identité</a>
+      <a href="#s-houses" class="nav"><i>⌂</i> Maisons</a>
+    </nav>
+    <div class="side-foot">
+      <button class="btn ghost block" id="out">Déconnexion</button>
+      <span class="muted tiny">MB 360° · v2</span>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <h1>Vue d'ensemble</h1>
+        <p class="muted">Tout ce qui est publié, en brouillon ou suspendu.</p>
+      </div>
+      <a class="btn ghost" id="view-site" target="_blank" rel="noreferrer">Voir le site ↗</a>
+    </header>
+
+    <section id="s-overview" class="section">
+      <div id="stats" class="stats"></div>
+    </section>
+
+    <section id="s-agencies" class="section card">
+      <div class="card-head">
+        <h2>Agences</h2>
+        <span class="muted tiny">Chaque agence a sa propre plateforme</span>
+      </div>
+      <div id="ags" class="list"></div>
+      <div class="row">
+        <input id="an" placeholder="Nom de l'agence">
+        <input id="as" placeholder="Identifiant dans l'URL, ex. agence-nour">
+        <button class="btn primary" id="aa">Ajouter l'agence</button>
+      </div>
+    </section>
+
+    <section id="s-import" class="section card">
+      <div class="card-head">
+        <h2>Importer une maison</h2>
+        <span class="muted tiny">Fichier d'export de la plateforme de conception</span>
+      </div>
+      <p class="muted small">Choisissez le fichier d'export (⬇ Exporter), puis l'agence. La maison est importée en brouillon : personne ne la voit avant activation.</p>
+      <div class="row">
+        <label class="file" id="filewrap"><input type="file" id="jf" accept=".json"><span id="fname">Choisir un fichier .json</span></label>
+        <select id="ag"></select>
+        <input id="hsg" placeholder="Identifiant de la maison, ex. villa-hydra">
+        <button class="btn primary" id="up">Importer</button>
+      </div>
+      <div id="msg" class="note"></div>
+    </section>
+
+    <section id="s-brand" class="section card">
+      <div class="card-head">
+        <h2>Identité de l'agence</h2>
+        <span class="muted tiny">Couleurs, police, logo et fond</span>
+      </div>
+      <div class="row">
+        <select id="bg"></select>
+        <input type="color" id="bc" value="#c9a96a" title="Couleur d'accent">
+        <select id="bf"><option>Cairo</option><option>Tajawal</option><option>Almarai</option><option>Noto Kufi Arabic</option><option>El Messiri</option><option>Reem Kufi</option><option>Amiri</option><option>IBM Plex Sans Arabic</option><option value="Poppins">Poppins (latin)</option><option value="Playfair Display">Playfair Display (latin)</option></select>
+        <label class="file" id="logowrap"><input type="file" id="lf" accept="image/*"><span>Logo</span></label>
+        <button class="btn primary" id="bs">Enregistrer l'identité</button>
+      </div>
+      <div class="row">
+        <label class="mini">Fond <input type="color" id="bb" value="#0b0b0d"></label>
+        <label class="mini">Texte <input type="color" id="bt" value="#f2f0ec"></label>
+        <select id="be"><option value="none">Fond fixe</option><option value="flow">Dégradé animé</option><option value="aurora">Aurore animée</option><option value="dots">Particules montantes</option><option value="pan">Panorama animé</option><option value="custom">Fichier personnalisé : vidéo ou image</option></select>
+        <label class="file" id="bgwrap"><input type="file" id="bk" accept="image/*,video/mp4,video/webm"><span>Fond personnalisé</span></label>
+      </div>
+      <div id="msg2" class="note"></div>
+    </section>
+
+    <section id="s-houses" class="section card">
+      <div class="card-head">
+        <h2>Maisons</h2>
+        <input id="search" class="search" placeholder="Rechercher une maison…">
+      </div>
+      <div id="hs" class="list"></div>
+    </section>
+  </main>
+</div>
+
+<div id="pe" hidden>
+  <div class="pb">
+    <b id="pt"></b>
+    <button class="btn ghost" id="pdoor">🚪 Portes</button>
+    <label class="mini">Largeur <input id="pw" type="number" step=".1" min="1"></label>
+    <label class="mini">Longueur <input id="pl2" type="number" step=".1" min="1"></label>
+    <label class="mini">Hauteur <input id="ph" type="number" step=".1" min="1"></label>
+    <button class="btn ghost" id="pfit">Ajuster</button>
+    <span class="spacer"></span>
+    <button class="btn primary" id="psave">Enregistrer le plan</button>
+    <button class="btn ghost" id="pclose">Fermer</button>
+  </div>
+  <svg id="pc"></svg>
 </div>
 
 <div id="qrmodal" hidden>
   <div class="qrbox">
-    <h3 id="qrtitle" style="margin:0;color:#c9a96a"></h3>
-    <div id="qrsub" style="font-size:14px;color:rgba(242,240,236,.7)"></div>
+    <h3 id="qrtitle"></h3>
+    <div id="qrsub" class="muted small"></div>
     <div id="qrarea" class="qrcanvas"></div>
-    <div id="qrlink" style="font-size:12px;direction:ltr;color:#c9a96a;word-break:break-all"></div>
-    <div style="display:flex;gap:8px;width:100%">
-      <button class="g" id="qrdown" style="flex:1">⬇ Télécharger pour impression (PNG)</button>
-      <button id="qrcopy">Copier le lien</button>
+    <div id="qrlink" class="qrlink"></div>
+    <div class="row tight">
+      <button class="btn primary" id="qrdown">⬇ Télécharger (PNG)</button>
+      <button class="btn ghost" id="qrcopy">Copier le lien</button>
     </div>
-    <button id="qrclose" style="width:100%;margin-top:4px">Fermer</button>
+    <button class="btn ghost block" id="qrclose">Fermer</button>
   </div>
 </div>
+
+<div id="toast"></div>
 
 <script src="/static/shared/layout.js"></script>
 <script src="/static/admin/app.js"></script></body></html>

@@ -98,7 +98,8 @@ def listing():
     hs = [fresh(k) for k in S().list('house/')]
     return J({'agencies': [a for a in ags if a],
               'houses': [{'id': h['id'], 'agency': h['agency'], 'name': h['name'], 'status': h['status'],
-                          'slug': h.get('slug', ''), 'n': len(h['rooms'])} for h in hs if h]})
+                          'slug': h.get('slug', ''), 'n': len(h['rooms']),
+                          'cover': (h['rooms'][0].get('image', '') if h['rooms'] else '')} for h in hs if h]})
 
 
 @bp.post('/agency')

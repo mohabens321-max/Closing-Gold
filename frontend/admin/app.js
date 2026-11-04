@@ -8,22 +8,88 @@ const logoBlob=f=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const 
 function fillBrand(){const a=D.agencies.find(x=>x.id==$('#bg').value);if(a){$('#bc').value=a.color||'#c9a96a';$('#bf').value=a.font||'Cairo';$('#bb').value=a.bg||'#0b0b0d';$('#bt').value=a.tx||'#f2f0ec';$('#be').value=a.fx||'none'}}
 const api=async(p,m,b)=>{const r=await fetch('/api/admin/'+p,{method:m||'GET',headers:{authorization:'Bearer '+tk},body:b===undefined?undefined:(b instanceof Blob?b:JSON.stringify(b))});if(r.status==401){sessionStorage.tk='';$('#app').hidden=true;$('#login').hidden=false;throw 0}return r.json()};
 
-let nm={},sl={};
+let nm={},sl={},FQ='';
 const lk=h=>h.slug?'/a/'+sl[h.agency]+'/'+h.slug:'/h/'+h.id;
+
+const S='fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+const ICO={
+  out:'<svg viewBox="0 0 24 24" '+S+'><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>',
+  pause:'<svg viewBox="0 0 24 24" '+S+'><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+  play:'<svg viewBox="0 0 24 24" '+S+'><path d="M7 4l13 8-13 8z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" '+S+'><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>',
+  qr:'<svg viewBox="0 0 24 24" '+S+'><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M21 21h-3M21 17v-3M17 21h-3"/></svg>',
+  globe:'<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg>',
+  pencil:'<svg viewBox="0 0 24 24" '+S+'><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  map:'<svg viewBox="0 0 24 24" '+S+'><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg>'
+};
+
+function toast(text,kind){
+  const t=document.createElement('div');
+  t.className='tst '+(kind||'');
+  t.textContent=text;
+  $('#toast').appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(6px)';t.style.transition='.25s';setTimeout(()=>t.remove(),260)},3200);
+}
+
+function renderStats(){
+  const on=D.houses.filter(h=>h.status=='active').length;
+  const dr=D.houses.filter(h=>h.status=='draft').length;
+  $('#stats').innerHTML=
+    '<div class="stat"><b>'+D.agencies.length+'</b><span>Agences</span></div>'+
+    '<div class="stat"><b>'+D.houses.length+'</b><span>Maisons</span></div>'+
+    '<div class="stat ok"><b>'+on+'</b><span>En ligne</span></div>'+
+    '<div class="stat warn"><b>'+dr+'</b><span>Brouillons</span></div>';
+}
+
+function renderAgencies(){
+  $('#ags').innerHTML=D.agencies.map(a=>{
+    const ini=esc((a.name||'?').trim().slice(0,2).toUpperCase());
+    return '<div class="arow">'
+      +'<div class="ava">'+ini+'</div>'
+      +'<div class="meta"><b>'+esc(a.name)+'</b><span dir="ltr">/a/'+esc(a.slug)+'</span></div>'
+      +'<span class="pill '+a.status+'">'+L[a.status]+'</span>'
+      +'<div class="acts">'
+        +'<a class="btn icon" href="/a/'+esc(a.slug)+'" target="_blank" rel="noreferrer" title="Ouvrir la plateforme">'+ICO.out+'</a>'
+        +'<button class="btn icon" data-t="agency" data-i="'+a.id+'" data-s="'+(a.status=='active'?'blocked':'active')+'" title="'+(a.status=='active'?'Suspendre':'Activer')+'">'+(a.status=='active'?ICO.pause:ICO.play)+'</button>'
+        +'<button class="btn icon danger" data-x="'+a.id+'" title="Supprimer">'+ICO.trash+'</button>'
+      +'</div></div>';
+  }).join('')||'<div class="empty">Aucune agence pour le moment.</div>';
+}
+
+function renderHouses(){
+  const q=FQ.trim().toLowerCase();
+  const rows=D.houses.filter(h=>!q||(h.name+' '+(nm[h.agency]||'')+' '+(h.slug||'')).toLowerCase().includes(q));
+  $('#hs').innerHTML=rows.map(h=>{
+    const live=h.status=='active'&&h.cover;
+    return '<div class="hrow">'
+      +'<div class="thumb'+(live?'':' ph')+'"'+(live?' style="background-image:url('+esc(h.cover)+')"':'')+'></div>'
+      +'<div class="meta"><b>'+esc(h.name)+'</b>'
+        +'<span>'+esc(nm[h.agency]||'')+' · '+h.n+' pièce'+(h.n>1?'s':'')+'</span>'
+        +'<a class="lnk" dir="ltr" href="'+lk(h)+'" target="_blank" rel="noreferrer">'+lk(h)+'</a></div>'
+      +'<div class="acts">'
+        +'<button class="btn icon" data-qr="'+h.id+'" title="QR code et impression">'+ICO.qr+'</button>'
+        +'<button class="btn icon" data-fb="'+h.id+'" title="Photos 360° pour Facebook">'+ICO.globe+'</button>'
+        +'<button class="btn icon" data-s2="'+h.id+'" title="Modifier l\'identifiant">'+ICO.pencil+'</button>'
+        +'<button class="btn icon" data-p="'+h.id+'" title="Plan des pièces">'+ICO.map+'</button>'
+        +'<button class="btn icon danger" data-d="'+h.id+'" title="Supprimer">'+ICO.trash+'</button>'
+      +'</div>'
+      +'<select class="sel" data-h="'+h.id+'">'+['draft','active','blocked'].map(s=>'<option value="'+s+'"'+(s==h.status?' selected':'')+'>'+L[s]+'</option>').join('')+'</select>'
+      +'</div>';
+  }).join('')||'<div class="empty">'+(q?'Aucun résultat pour « '+esc(FQ)+' ».':'Aucune maison pour le moment.')+'</div>';
+}
 
 async function load(){
   D=await api('list');
   MAXUP=((await api('config')).max_upload_mb||24)*1e6;
   $('#login').hidden=true;
   $('#app').hidden=false;
-  $('#ags').innerHTML=D.agencies.map(a=>'<div class="r"><b>'+esc(a.name)+'</b><a href="/a/'+a.slug+'" target="_blank">/a/'+a.slug+'</a><span class="s '+a.status+'">'+L[a.status]+'</span><button data-t="agency" data-i="'+a.id+'" data-s="'+(a.status=='active'?'blocked':'active')+'">'+(a.status=='active'?'🚫 Suspendre':'✅ Activer')+'</button><button data-x="'+a.id+'">🗑</button></div>').join('')||'<p>Aucune agence pour le moment.</p>';
-  $('#ag').innerHTML=D.agencies.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join('');
-  const sb=$('#bg').value;$('#bg').innerHTML=$('#ag').innerHTML;if(sb)$('#bg').value=sb;fillBrand();
-  
   nm={};sl={};
   D.agencies.forEach(a=>{nm[a.id]=a.name;sl[a.id]=a.slug});
-  
-  $('#hs').innerHTML=D.houses.map(h=>'<div class="r"><b>'+esc(h.name)+'</b><span>'+esc(nm[h.agency]||'')+' - '+h.n+' pièce'+(h.n>1?'s':'')+'</span><a dir="ltr" href="'+lk(h)+'" target="_blank">'+lk(h)+'</a><button data-qr="'+h.id+'" title="QR code et impression">📱 QR</button><button data-fb="'+h.id+'" title="Photos 360° pour Facebook">🌐</button><button data-s2="'+h.id+'">✎</button><select data-h="'+h.id+'">'+['draft','active','blocked'].map(s=>'<option value="'+s+'"'+(s==h.status?' selected':'')+'>'+L[s]+'</option>').join('')+'</select><button data-p="'+h.id+'">🗺</button><button data-d="'+h.id+'">🗑</button></div>').join('')||'<p>Aucune maison pour le moment.</p>';
+  renderStats();renderAgencies();renderHouses();
+  $('#ag').innerHTML=D.agencies.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join('');
+  const sb=$('#bg').value;$('#bg').innerHTML=$('#ag').innerHTML;if(sb)$('#bg').value=sb;fillBrand();
+  const first=D.agencies.find(a=>a.status=='active'),vs=$('#view-site');
+  if(first){vs.href='/a/'+first.slug;vs.hidden=false}else vs.hidden=true;
 }
 
 function openQr(hid){
@@ -94,7 +160,7 @@ function openQr(hid){
   };
 
   $('#qrcopy').onclick=()=>{
-    navigator.clipboard.writeText(fullUrl).then(()=>alert('Lien copié !'));
+    navigator.clipboard.writeText(fullUrl).then(()=>toast('Lien copié','ok'));
   };
 }
 
@@ -196,7 +262,7 @@ $('#up').onclick=async()=>{const f=$('#jf').files[0],ag=$('#ag').value;if(!f||!a
 try{const j=JSON.parse(await f.text()),h=await api('house','POST',{agency:ag,name:j.name,slug:$('#hsg').value.trim()}),rooms=[];let i=0;
 for(const r of j.rooms){msg('Envoi '+(++i)+' / '+j.rooms.length+' ...');let img=r.image;if(img.startsWith('data:')){await api('img/'+h.id+'/'+r.id,'PUT',await shrink(img));img='/img/'+h.id+'/'+r.id}
 rooms.push({id:r.id,name:r.name,image:img,dims:r.dims,lon0:r.lon0,desc:r.desc,hotspots:r.hotspots,infos:r.infos})}
-await api('data/'+h.id,'POST',rooms);msg('Import terminé. La maison est en « brouillon » : personne ne la voit avant activation.');load()}catch(x){msg("Échec de l'import : vérifiez que le fichier est un export valide")}};
+await api('data/'+h.id,'POST',rooms);msg('Import terminé. La maison est en « brouillon » : personne ne la voit avant activation.');toast('Maison importée en brouillon','ok');load()}catch(x){msg("Échec de l'import : vérifiez que le fichier est un export valide");toast("Échec de l'import",'err')}};
 
 let E;const snap=v=>Math.round(v*4)/4;
 async function editPlan(id){const h=await api('house/'+id);h.rooms.forEach(r=>{r.dims=r.dims||[6,8,2.6];r.hotspots=r.hotspots||[]});const L=autoLayout(h.rooms,h.plan),dims={};h.rooms.forEach(r=>dims[r.id]=r.dims.slice());
@@ -217,8 +283,24 @@ if(t.dataset.id){E.sel=t.dataset.id;const r=E.by[E.sel];dg={r,ox:px-r.x,oz:pz-r.
 pc.onpointermove=e=>{if(!dg)return;const[px,pz]=spt(e),nx=snap(px-dg.ox),nz=snap(pz-dg.oz),dx=nx-dg.r.x,dz=nz-dg.r.z;dg.carry.forEach(q=>{q[0]+=dx;q[1]+=dz});dg.r.x=nx;dg.r.z=nz;pdraw(0,1)};
 pc.onpointerup=pc.onpointercancel=()=>{dg=null};
 ['pw','pl2','ph'].forEach(i=>$('#'+i).oninput=()=>{const r=E&&E.by[E.sel];if(!r)return;const a=parseFloat($('#pw').value),b=parseFloat($('#pl2').value),c=parseFloat($('#ph').value);if(a>=1)r.w=E.dims[r.id][0]=a;if(b>=1)r.l=E.dims[r.id][1]=b;if(c>=1)E.dims[r.id][2]=c;pdraw(0,1)});
-$('#pdoor').onclick=()=>{E.mode=!E.mode;$('#pdoor').classList.toggle('g',!!E.mode)};$('#pfit').onclick=()=>pdraw(1);$('#pclose').onclick=()=>{$('#pe').hidden=true;E=null};
-$('#psave').onclick=async()=>{const r={};E.rs.forEach(q=>r[q.id]={x:q.x,z:q.z});const x=await api('plan/'+E.id,'POST',{plan:{r,d:E.dr},dims:E.dims});alert(x.ok?'Plan enregistré':"Échec de l'enregistrement");load()};
+$('#pdoor').onclick=()=>{E.mode=!E.mode;$('#pdoor').classList.toggle('primary',!!E.mode)};$('#pfit').onclick=()=>pdraw(1);$('#pclose').onclick=()=>{$('#pe').hidden=true;E=null};
+$('#psave').onclick=async()=>{const r={};E.rs.forEach(q=>r[q.id]={x:q.x,z:q.z});const x=await api('plan/'+E.id,'POST',{plan:{r,d:E.dr},dims:E.dims});x.ok?toast('Plan enregistré','ok'):toast("Échec de l'enregistrement",'err');load()};
 $('#bg').onchange=fillBrand;
 $('#bs').onclick=async()=>{const id=$('#bg').value;if(!id)return alert("Ajoutez d'abord une agence");try{const f=$('#lf').files[0];if(f)await api('logo/'+id,'POST',await logoBlob(f));const k=$('#bk').files[0];if(k){if(k.size>MAXUP)return alert('Fichier trop lourd (max '+Math.floor(MAXUP/1e6)+' Mo), choisissez un fichier plus léger');await api('bg/'+id,'POST',k)}await api('brand','POST',{id,color:$('#bc').value,font:$('#bf').value,logo:!!f,bg:$('#bb').value,tx:$('#bt').value,fx:$('#be').value,bgt:k?k.type:''});const a=D.agencies.find(x=>x.id==id);Object.assign(a,{color:$('#bc').value,font:$('#bf').value,bg:$('#bb').value,tx:$('#bt').value,fx:$('#be').value});if(f)a.logo=1;if(k)a.bgType=k.type;$('#msg2').textContent="Identité enregistrée. Elle apparaît sur les pages de l'agence sous une minute environ.";$('#lf').value='';$('#bk').value=''}catch(x){$("#msg2").textContent="Échec de l'enregistrement"}};
+// ---- interface ----
+$('#search').oninput=()=>{FQ=$('#search').value;renderHouses()};
+document.querySelectorAll('#nav .nav').forEach(a=>a.addEventListener('click',()=>{
+  document.querySelectorAll('#nav .nav').forEach(x=>x.classList.remove('on'));
+  a.classList.add('on');
+}));
+$('#out').onclick=()=>{sessionStorage.tk='';tk='';location.reload()};
+function bindFile(id,fallback){
+  const el=$('#'+id),w=el.closest('.file'),s=w.querySelector('span');
+  const upd=()=>{const f=el.files[0];s.textContent=f?f.name:fallback;w.classList.toggle('has',!!f)};
+  el.addEventListener('change',upd);el._upd=upd;
+}
+bindFile('jf','Choisir un fichier .json');
+bindFile('lf','Logo');
+bindFile('bk','Fond personnalisé');
+$('#bs').addEventListener('click',()=>setTimeout(()=>{['lf','bk'].forEach(id=>{const el=$('#'+id);if(!el.files[0])el._upd()})},900));
 if(tk)load().catch(()=>{});
