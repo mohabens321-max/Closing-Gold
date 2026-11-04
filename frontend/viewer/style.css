@@ -31,7 +31,7 @@ body{margin:0;background:#000;color:var(--tx,#f2f0ec);font:400 16px/1.7 var(--f,
 #ip .ipd{margin:12px 0 0;font-size:14.5px;line-height:1.65;color:rgba(242,240,236,.86);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
 #ip .ipd.open{display:block;overflow:visible}
 #ip .ipm{margin-top:6px;background:none;border:0;color:var(--ac);font:inherit;font-weight:800;font-size:13px;cursor:pointer;padding:0}
-#ip .ipw{display:block;margin-top:16px;padding:11px;border-radius:12px;background:var(--ac);color:var(--on);text-align:center;font-weight:800;text-decoration:none}
+#ip .ipw{display:block;margin-top:16px;padding:11px;border-radius:12px;background:var(--ac);color:var(--on);text-align:center;font-weight:800;text-decoration:none;position:sticky;bottom:0}
 #ip .ipw:hover{filter:brightness(1.06)}
 @media(max-width:700px){#ip{top:auto;bottom:118px;left:10px;right:10px;width:auto;max-height:58vh}}
 @media(max-height:640px){#ip{max-height:calc(100vh - 130px)}#ip .ipd{-webkit-line-clamp:3}}
