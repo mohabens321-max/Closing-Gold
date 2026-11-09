@@ -383,7 +383,11 @@ document.addEventListener('click',async e=>{
   if(b.dataset.agencylink){
     const a=D.agencies.find(x=>x.id==b.dataset.agencylink);
     if(a&&!a.token){const r=await api('agencytoken/'+a.id,'POST',{});a.token=r.token}
-    if(a&&a.token){navigator.clipboard.writeText(location.origin+'/agency/'+a.slug+'?t='+a.token).then(()=>toast('Lien copie - envoyez-le a l agence','ok'))}
+    if(a&&a.token){
+      const url=location.origin+'/agency/'+a.slug+'?t='+a.token;
+      navigator.clipboard.writeText(url).then(()=>toast('Lien copie - envoyez-le a l agence','ok'))
+        .catch(()=>{toast('Copiez le lien manuellement','warn');prompt('Lien d acces de l agence :',url)});
+    }
   }
   if(b.dataset.inf) openInfo(b.dataset.inf);
   if(b.dataset.qr) openQr(b.dataset.qr);
