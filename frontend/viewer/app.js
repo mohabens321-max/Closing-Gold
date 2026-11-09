@@ -15,7 +15,8 @@ for(let i=0;i<70;i++)A.push({x:Math.random()*c.width,y:Math.random()*c.height,r:
 document.body.prepend(e)};
 const logo=b=>b&&b.logo?'<img class="lg" src="'+b.logo+'" alt="">':'';
 fetch('/api/'+K+'/'+P.slice(2).join('/')).then(async r=>{if(!r.ok)return note('Ce service est indisponible pour le moment');const d=await r.json();brand(d.brand);if(K=='a'&&!P[3]){cat(d);fx(d.brand,d)}else tour(d)}).catch(()=>note('Connexion impossible, veuillez réessayer'));
-function cat(d){document.body.className='cat';document.title=d.name;$('#cv').remove();$('#hs').remove();const g=document.createElement('div');g.id='grid';g.innerHTML='<h1>'+logo(d.brand)+esc(d.name)+'</h1><div class="gr"></div>';
+const track=(kind,id)=>{if(!id)return;const k='v_'+kind+'_'+id;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(_){}fetch('/api/view/'+kind+'/'+id,{method:'POST'}).catch(()=>{})};
+function cat(d){document.body.className='cat';document.title=d.name;track('a',d.id);$('#cv').remove();$('#hs').remove();const g=document.createElement('div');g.id='grid';g.innerHTML='<h1>'+logo(d.brand)+esc(d.name)+'</h1><div class="gr"></div>';
 d.houses.forEach(h=>{const a=document.createElement('a');a.href=h.slug?'/a/'+P[2]+'/'+h.slug:'/h/'+h.id;a.className='card';if(h.cover)a.style.backgroundImage='url("'+h.cover+'")';a.innerHTML='<div><b>'+esc(h.name)+'</b><span>'+(h.type?esc(h.type)+' · ':'')+h.n+' pièce'+(h.n>1?'s':'')+'</span>'+(h.price?'<em>'+esc(h.price)+'</em>':'')+'</div>';g.lastChild.appendChild(a)});
 if(!d.houses.length)g.innerHTML+='<p>Aucune visite publiée pour le moment.</p>';document.body.appendChild(g)}
 function tour(d){
@@ -73,6 +74,40 @@ $('#shb').onclick=e=>{e.stopPropagation();$('#shp').classList.toggle('on')};
 $('#shc').onclick=async()=>{try{await navigator.clipboard.writeText(shareUrl);$('#shc').textContent='Lien copié !';setTimeout(()=>{$('#shc').textContent='Copier le lien'},1600)}catch(_){}};
 document.addEventListener('click',e=>{if(!e.target.closest('#sh'))$('#shp').classList.remove('on')});
 $('#sh').classList.add('on');
+track('h',d.id);
+// ---- demande de visite (lead) ----
+(function(){
+  $('#ldb').classList.add('on');
+  $('#lf-h').textContent=d.agency+' — '+d.name;
+  try{$('#lf-d').min=new Date().toISOString().slice(0,10)}catch(_){}
+  const open=()=>{$('#lfm').hidden=false;$('#lf-form').hidden=false;$('#lf-ok').hidden=true;$('#lf-e').textContent='';setTimeout(()=>$('#lf-n').focus(),60)};
+  $('#ldb').onclick=e=>{e.stopPropagation();open()};
+  $('#lfx').onclick=()=>{$('#lfm').hidden=true};
+  $('#lfm').onclick=e=>{if(e.target.id=='lfm')$('#lfm').hidden=true};
+  $('#lf-done').onclick=()=>{$('#lfm').hidden=true};
+  addEventListener('keydown',e=>{if(e.key=='Escape')$('#lfm').hidden=true});
+  $('#lf-s').onclick=async()=>{
+    const err=t=>{$('#lf-e').textContent=t};
+    const name=$('#lf-n').value.trim(),phone=$('#lf-p').value.trim(),date=$('#lf-d').value,msg=$('#lf-m').value.trim();
+    if(name.length<2)return err('Écrivez votre nom.');
+    if(phone.replace(/\D/g,'').length<7)return err('Numéro de téléphone invalide.');
+    const btn=$('#lf-s');btn.disabled=true;btn.textContent='Envoi…';err('');
+    try{
+      const r=await fetch('/api/lead/'+d.id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,phone,date,msg,website:$('#lf-w').value})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok||!j.ok){
+        if(r.status==429)err('Vous avez déjà envoyé plusieurs demandes aujourd\'hui. Réessayez demain.');
+        else if(j.e=='invalid')err('Vérifiez les informations saisies.');
+        else err('Échec d\'envoi. Vérifiez votre connexion.');
+        btn.disabled=false;btn.textContent='Envoyer la demande';return;
+      }
+      $('#lf-form').hidden=true;$('#lf-ok').hidden=false;
+      const tel=String(IF.phone||'').replace(/\D/g,'');
+      if(tel){const w=$('#lf-wa');w.href='https://wa.me/'+tel+'?text='+encodeURIComponent('Bonjour, je viens de demander une visite pour '+d.name+' sur MB 360°');w.hidden=false}
+      $('#lf-n').value=$('#lf-p').value=$('#lf-d').value=$('#lf-m').value='';
+    }catch(_){err('Connexion impossible, réessayez.');btn.disabled=false;btn.textContent='Envoyer la demande'}
+  };
+})();
 // ---- fiche d'informations (description + caractéristiques) ----
 (function(){
   const g=[];

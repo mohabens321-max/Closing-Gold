@@ -1,14 +1,16 @@
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';'),L={draft:'brouillon',active:'actif',blocked:'suspendu'};
+const AGENCY_MODE=(location.pathname.startsWith('/agency')||new URLSearchParams(location.search).has('t'));
+const API_BASE=AGENCY_MODE?'/api/agency/':'/api/admin/';
 
-let tk=sessionStorage.tk||'',D,MAXUP=24e6;
+let tk=AGENCY_MODE?(new URLSearchParams(location.search).get('t')||sessionStorage.at||''):(sessionStorage.tk||''),D,MAXUP=24e6;
 const msg=t=>$('#msg').textContent=t;
 const MAXW=3072,Q=.82;
 const shrink=src=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const w=Math.min(i.width,MAXW),c=document.createElement('canvas');c.width=w;c.height=Math.round(w*i.height/i.width);c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(),'image/jpeg',Q)};i.onerror=no;i.src=src});
 const logoBlob=f=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const k=Math.min(1,400/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(ok,'image/png')};i.onerror=no;i.src=URL.createObjectURL(f)});
 function fillBrand(){const a=D.agencies.find(x=>x.id==$('#bg').value);if(a){$('#bc').value=a.color||'#c9a96a';$('#bf').value=a.font||'Cairo';$('#bb').value=a.bg||'#0b0b0d';$('#bt').value=a.tx||'#f2f0ec';$('#be').value=a.fx||'none'}}
-const api=async(p,m,b)=>{const r=await fetch('/api/admin/'+p,{method:m||'GET',headers:{authorization:'Bearer '+tk},body:b===undefined?undefined:(b instanceof Blob?b:JSON.stringify(b))});if(r.status==401){sessionStorage.tk='';$('#app').hidden=true;$('#login').hidden=false;throw 0}return r.json()};
+const api=async(p,m,b)=>{const r=await fetch(API_BASE+p,{method:m||'GET',headers:{authorization:'Bearer '+tk},body:b===undefined?undefined:(b instanceof Blob?b:JSON.stringify(b))});if(r.status==401){sessionStorage.tk='';$('#app').hidden=true;$('#login').hidden=false;throw 0}return r.json()};
 
-let nm={},sl={},FQ='';
+let nm={},sl={},FQ='',LQ='',MY_AGENCY=null;
 const lk=h=>h.slug?'/a/'+sl[h.agency]+'/'+h.slug:'/h/'+h.id;
 
 const S='fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
@@ -21,7 +23,11 @@ const ICO={
   globe:'<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg>',
   pencil:'<svg viewBox="0 0 24 24" '+S+'><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   map:'<svg viewBox="0 0 24 24" '+S+'><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg>',
-  info:'<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>'
+  info:'<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>',
+  eye:'<svg viewBox="0 0 24 24" '+S+'><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" '+S+'><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.25a2 2 0 0 1 2.1-.45c.9.34 1.84.57 2.8.7A2 2 0 0 1 22 16.9z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" '+S+'><path d="M20 6 9 17l-5-5"/></svg>',
+  mail:'<svg viewBox="0 0 24 24" '+S+'><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>'
 };
 
 function toast(text,kind){
@@ -35,14 +41,59 @@ function toast(text,kind){
 function renderStats(){
   const on=D.houses.filter(h=>h.status=='active').length;
   const dr=D.houses.filter(h=>h.status=='draft').length;
+  const st=D.stats||{views:0,today:0,leads:0,leadsNew:0};
   $('#stats').innerHTML=
     '<div class="stat"><b>'+D.agencies.length+'</b><span>Agences</span></div>'+
     '<div class="stat"><b>'+D.houses.length+'</b><span>Maisons</span></div>'+
     '<div class="stat ok"><b>'+on+'</b><span>En ligne</span></div>'+
-    '<div class="stat warn"><b>'+dr+'</b><span>Brouillons</span></div>';
+    '<div class="stat"><b>'+st.views+'</b><span>Vues totales</span></div>'+
+    '<div class="stat"><b>'+st.today+'</b><span>Vues aujourd\'hui</span></div>'+
+    '<div class="stat gold"><b>'+st.leads+'</b><span>Demandes</span>'+(st.leadsNew?'<small>'+st.leadsNew+' nouvelle(s)</small>':'')+'</div>';
+  const nb=document.querySelector('#nav a[href="#s-leads"]');
+  if(nb){const old=nb.querySelector('.nb');if(old)old.remove();
+    if(st.leadsNew){const b=document.createElement('span');b.className='nb';b.textContent=st.leadsNew;nb.appendChild(b)}}
+}
+
+function ago(ts){
+  const s=Math.max(0,Math.floor(Date.now()/1000)-ts);
+  if(s<60)return "à l'instant";
+  if(s<3600)return 'il y a '+Math.floor(s/60)+' min';
+  if(s<86400)return 'il y a '+Math.floor(s/3600)+' h';
+  if(s<604800)return 'il y a '+Math.floor(s/86400)+' j';
+  return new Date(ts*1000).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+}
+function fdate(d){
+  try{return new Date(d+'T00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}catch(_) {return d}
+}
+
+function renderLeads(){
+  const q=LQ.trim().toLowerCase();
+  const rows=(D.leads||[]).filter(r=>!q||(r.name+' '+r.phone+' '+(r.houseName||'')+' '+(r.agencyName||'')).toLowerCase().includes(q));
+  $('#ls').innerHTML=rows.map(r=>{
+    const ini=esc((r.name||'?').trim().slice(0,2).toUpperCase());
+    const h=D.houses.find(x=>x.id==r.house);
+    const link=h?lk(h):'/h/'+esc(r.house);
+    const wa='https://wa.me/'+esc(r.phoneDigits||r.phone.replace(/\D/g,''))+'?text='+encodeURIComponent('Bonjour '+r.name+', je vous recontacte pour '+r.houseName+' sur MB 360°.');
+    return '<div class="lrow'+(r.done?' done':'')+'">'
+      +'<div class="ava">'+ini+'</div>'
+      +'<div class="meta"><b>'+esc(r.name)+'<span class="when">'+ago(r.at||0)+'</span></b>'
+        +'<span>'+esc(r.houseName||'')+' · '+esc(r.agencyName||'')+'</span>'
+        +'<a class="lnk" dir="ltr" href="'+link+'" target="_blank" rel="noreferrer">'+link+'</a>'
+        +(r.date?'<p class="pref">Visite souhaitée : '+fdate(r.date)+'</p>':'')
+        +(r.msg?'<p class="msg">'+esc(r.msg)+'</p>':'')
+        +'<span dir="ltr">'+esc(r.phone)+'</span></div>'
+      +'<span class="pill '+(r.done?'active':'blocked')+'">'+(r.done?'Contacté':'Nouveau')+'</span>'
+      +'<div class="acts">'
+        +'<a class="btn icon" href="'+wa+'" target="_blank" rel="noreferrer" title="Répondre sur WhatsApp">'+ICO.phone+'</a>'
+        +'<a class="btn icon" href="tel:+'+esc(r.phoneDigits||r.phone.replace(/\D/g,''))+'" title="Appeler">'+ICO.phone+'</a>'
+        +'<button class="btn icon" data-ld="'+r.id+'" data-done="'+(r.done?0:1)+'" title="'+(r.done?'Marquer comme nouveau':'Marquer comme contacté')+'">'+ICO.check+'</button>'
+        +'<button class="btn icon danger" data-ldel="'+r.id+'" title="Supprimer">'+ICO.trash+'</button>'
+      +'</div></div>';
+  }).join('')||'<div class="empty">'+(q?'Aucun résultat pour « '+esc(LQ)+' ».':'Aucune demande pour le moment. Les demandes des visiteurs apparaîtront ici.')+'</div>';
 }
 
 function renderAgencies(){
+  if(AGENCY_MODE){$('#ags').innerHTML='';return}
   $('#ags').innerHTML=D.agencies.map(a=>{
     const ini=esc((a.name||'?').trim().slice(0,2).toUpperCase());
     return '<div class="arow">'
@@ -52,6 +103,7 @@ function renderAgencies(){
       +'<div class="acts">'
         +'<a class="btn icon" href="/a/'+esc(a.slug)+'" target="_blank" rel="noreferrer" title="Ouvrir la plateforme">'+ICO.out+'</a>'
         +'<button class="btn icon" data-t="agency" data-i="'+a.id+'" data-s="'+(a.status=='active'?'blocked':'active')+'" title="'+(a.status=='active'?'Suspendre':'Activer')+'">'+(a.status=='active'?ICO.pause:ICO.play)+'</button>'
+        +'<button class="btn icon" data-agencylink="'+a.id+'" title="Copier le lien d acces de l agence">'+ICO.mail+'</button>'
         +'<button class="btn icon danger" data-x="'+a.id+'" title="Supprimer">'+ICO.trash+'</button>'
       +'</div></div>';
   }).join('')||'<div class="empty">Aucune agence pour le moment.</div>';
@@ -66,7 +118,10 @@ function renderHouses(){
       +'<div class="thumb'+(live?'':' ph')+'"'+(live?' style="background-image:url('+esc(h.cover)+')"':'')+'></div>'
       +'<div class="meta"><b>'+esc(h.name)+'</b>'
         +'<span>'+esc(nm[h.agency]||'')+' · '+h.n+' pièce'+(h.n>1?'s':'')+(h.price?' · '+esc(h.price):'')+'</span>'
-        +'<a class="lnk" dir="ltr" href="'+lk(h)+'" target="_blank" rel="noreferrer">'+lk(h)+'</a></div>'
+        +'<a class="lnk" dir="ltr" href="'+lk(h)+'" target="_blank" rel="noreferrer">'+lk(h)+'</a>'
+        +'<span class="biz">'+ICO.eye+' '+(h.views||0)+' vue'+((h.views||0)>1?'s':'')+(h.today?' · '+h.today+' aujourd\'hui':'')+'</span>'
+        +(h.leads?'<button class="biz gold" data-lfh="'+esc(h.name)+'" title="Voir les demandes">'+ICO.mail+' '+h.leads+' demande'+(h.leads>1?'s':'')+'</button>':'')
+        +'</div>'
       +'<div class="acts">'
         +'<button class="btn icon'+(h.desc?' has':'')+'" data-inf="'+h.id+'" title="'+(h.desc?'Modifier la description et les informations':'Ajouter une description')+'">'+ICO.info+'</button>'
         +'<button class="btn icon" data-qr="'+h.id+'" title="QR code et impression">'+ICO.qr+'</button>'
@@ -81,17 +136,61 @@ function renderHouses(){
 }
 
 async function load(){
+  if(AGENCY_MODE){
+    if(!tk){$('#login').hidden=false;$('#app').hidden=true;return}
+    sessionStorage.at=tk;
+    D=await api('me');
+    MAXUP=((await api('config')).max_upload_mb||24)*1e6;
+    MY_AGENCY=D.agency;
+    D.agencies=[D.agency];
+    D.stats=D.stats||{views:0,today:0,leads:0,leadsNew:0};
+    nm={};sl={};nm[D.agency.id]=D.agency.name;sl[D.agency.id]=D.agency.slug;
+    $('#login').hidden=true;$('#app').hidden=false;
+    const sa=document.querySelector('#s-agencies');if(sa)sa.hidden=true;
+    const navAg=document.querySelector('#nav a[href="#s-agencies"]');if(navAg)navAg.hidden=true;
+    renderStats();renderAgencies();renderHouses();renderLeads();
+    $('#ag').innerHTML='<option value="'+D.agency.id+'">'+esc(D.agency.name)+'</option>';
+    $('#bg').innerHTML='<option value="'+D.agency.id+'">'+esc(D.agency.name)+'</option>';
+    $('#bg').value=D.agency.id;fillBrand();
+    const vs=$('#view-site');vs.href='/a/'+D.agency.slug;vs.hidden=false;vs.textContent="Voir ma plateforme ↗";
+    document.title='Espace agence — '+D.agency.name;
+    const h1=document.querySelector('.topbar h1');if(h1)h1.textContent='Bonjour, '+D.agency.name;
+    const p=document.querySelector('.topbar p');if(p)p.textContent='Gérez vos biens, vos demandes et votre identité.';
+    if(!document.querySelector('#rotatetok')){
+      const b=document.createElement('button');b.id='rotatetok';b.className='btn ghost';b.textContent="Régénérer le lien d'accès";
+      b.onclick=async()=>{if(!confirm("Régénérer le lien ? L'ancien lien cessera de fonctionner."))return;
+        const r=await api('token/rotate','POST',{});if(r.token){tk=r.token;sessionStorage.at=tk;const u=new URL(location.href);u.searchParams.set('t',tk);history.replaceState({},'',u);toast('Nouveau lien généré — copiez-le maintenant','ok');showAgencyLink()}};
+      document.querySelector('.topbar').appendChild(b);
+    }
+    showAgencyLink();
+    return;
+  }
   D=await api('list');
   MAXUP=((await api('config')).max_upload_mb||24)*1e6;
   $('#login').hidden=true;
   $('#app').hidden=false;
   nm={};sl={};
   D.agencies.forEach(a=>{nm[a.id]=a.name;sl[a.id]=a.slug});
-  renderStats();renderAgencies();renderHouses();
+  renderStats();renderAgencies();renderHouses();renderLeads();
   $('#ag').innerHTML=D.agencies.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join('');
   const sb=$('#bg').value;$('#bg').innerHTML=$('#ag').innerHTML;if(sb)$('#bg').value=sb;fillBrand();
   const first=D.agencies.find(a=>a.status=='active'),vs=$('#view-site');
   if(first){vs.href='/a/'+first.slug;vs.hidden=false}else vs.hidden=true;
+}
+
+function showAgencyLink(){
+  if(!AGENCY_MODE||!MY_AGENCY)return;
+  const tok=tk,slug=MY_AGENCY.slug;
+  const url=location.origin+'/agency/'+slug+'?t='+tok;
+  if(!document.querySelector('#agencylink')){
+    const box=document.createElement('div');box.id='agencylink';box.className='card';box.style.marginBottom='18px';
+    box.innerHTML='<div class="card-head"><h2>Votre lien d acces</h2><span class="muted tiny">Partagez ce lien avec votre equipe</span></div>'
+      +'<div class="row" style="margin-top:0"><input id="agencylinkinput" readonly dir="ltr" style="flex:1;font-family:monospace;font-size:12.5px"><button class="btn primary" id="agencylinkcopy">Copier</button></div>'
+      +'<p class="muted small" style="margin:8px 0 0">Ce lien donne acces a cet espace. Ne le partagez qu avec vos collaborateurs. Si vous pensez qu il a fuite, cliquez sur Regenerer.</p>';
+    document.querySelector('main').insertBefore(box,document.querySelector('#s-overview'));
+    $('#agencylinkcopy').onclick=()=>{navigator.clipboard.writeText($('#agencylinkinput').value).then(()=>toast('Lien copié','ok'))};
+  }
+  $('#agencylinkinput').value=url;
 }
 
 function openQr(hid){
@@ -277,6 +376,14 @@ addEventListener('keydown',e=>{if(e.key=='Escape'&&!$('#infom').hidden){$('#info
 
 document.addEventListener('click',async e=>{
   const b=e.target;
+  if(b.dataset.lfh){LQ=b.dataset.lfh;$('#leadsearch').value=LQ;renderLeads();document.querySelector('#s-leads').scrollIntoView({behavior:'smooth'})}
+  if(b.dataset.ld){await api('lead/'+b.dataset.ld,'POST',{done:+b.dataset.done});toast('Demande mise à jour','ok');load()}
+  if(b.dataset.ldel&&confirm('Supprimer cette demande ?')){await api('dellead/'+b.dataset.ldel,'POST',{});load()}
+  if(b.dataset.agencylink){
+    const a=D.agencies.find(x=>x.id==b.dataset.agencylink);
+    if(a&&!a.token){const r=await api('agencytoken/'+a.id,'POST',{});a.token=r.token}
+    if(a&&a.token){navigator.clipboard.writeText(location.origin+'/agency/'+a.slug+'?t='+a.token).then(()=>toast('Lien copie - envoyez-le a l agence','ok'))}
+  }
   if(b.dataset.inf) openInfo(b.dataset.inf);
   if(b.dataset.qr) openQr(b.dataset.qr);
   if(b.dataset.fb) export360(b.dataset.fb);
@@ -326,6 +433,7 @@ $('#bg').onchange=fillBrand;
 $('#bs').onclick=async()=>{const id=$('#bg').value;if(!id)return alert("Ajoutez d'abord une agence");try{const f=$('#lf').files[0];if(f)await api('logo/'+id,'POST',await logoBlob(f));const k=$('#bk').files[0];if(k){if(k.size>MAXUP)return alert('Fichier trop lourd (max '+Math.floor(MAXUP/1e6)+' Mo), choisissez un fichier plus léger');await api('bg/'+id,'POST',k)}await api('brand','POST',{id,color:$('#bc').value,font:$('#bf').value,logo:!!f,bg:$('#bb').value,tx:$('#bt').value,fx:$('#be').value,bgt:k?k.type:''});const a=D.agencies.find(x=>x.id==id);Object.assign(a,{color:$('#bc').value,font:$('#bf').value,bg:$('#bb').value,tx:$('#bt').value,fx:$('#be').value});if(f)a.logo=1;if(k)a.bgType=k.type;$('#msg2').textContent="Identité enregistrée. Elle apparaît sur les pages de l'agence sous une minute environ.";$('#lf').value='';$('#bk').value=''}catch(x){$("#msg2").textContent="Échec de l'enregistrement"}};
 // ---- interface ----
 $('#search').oninput=()=>{FQ=$('#search').value;renderHouses()};
+$('#leadsearch').oninput=()=>{LQ=$('#leadsearch').value;renderLeads()};
 document.querySelectorAll('#nav .nav').forEach(a=>a.addEventListener('click',()=>{
   document.querySelectorAll('#nav .nav').forEach(x=>x.classList.remove('on'));
   a.classList.add('on');
@@ -340,4 +448,11 @@ bindFile('jf','Choisir un fichier .json');
 bindFile('lf','Logo');
 bindFile('bk','Fond personnalisé');
 $('#bs').addEventListener('click',()=>setTimeout(()=>{['lf','bk'].forEach(id=>{const el=$('#'+id);if(!el.files[0])el._upd()})},900));
-if(tk)load().catch(()=>{});
+if(AGENCY_MODE){
+  if(!tk){
+    $('#login').hidden=false;$('#app').hidden=true;
+    document.querySelector('.login-card h1').textContent="Lien d'accès requis";
+    const pm=document.querySelector('.login-card p.muted');if(pm)pm.textContent="Ouvrez cet espace via le lien fourni par l'administrateur (paramètre ?t=...).";
+    $('#go').hidden=true;$('#tk').hidden=true;
+  } else load().catch(()=>{});
+} else if(tk)load().catch(()=>{});

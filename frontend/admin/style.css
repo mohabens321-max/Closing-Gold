@@ -79,6 +79,10 @@ main{flex:1;min-width:0;padding:26px 34px 80px;max-width:1180px}
 .stat::after{content:"";position:absolute;right:-26px;top:-26px;width:86px;height:86px;border-radius:50%;background:rgba(201,169,106,.07)}
 .stat.ok b{color:var(--ok)}
 .stat.warn b{color:var(--warn)}
+.stat.gold b{color:var(--gold)}
+.stat small{display:block;color:var(--mut);font-size:11px;margin-top:2px}
+.stat.gold b{color:var(--gold)}
+.stat small{display:block;color:var(--mut);font-size:11px;margin-top:2px}
 
 /* ---------- cards ---------- */
 .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
@@ -115,6 +119,34 @@ main{flex:1;min-width:0;padding:26px 34px 80px;max-width:1180px}
 .search{max-width:230px;padding:9px 13px!important;font-size:13.5px}
 .note{color:var(--gold);font-size:13.5px;margin-top:10px}
 .note:empty{display:none}
+
+/* ---------- leads ---------- */
+.lrow{display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+.lrow.done{opacity:.55}
+.lrow .meta b .when{color:var(--gold);font-size:11px;font-weight:700;margin-inline-start:8px;text-transform:none}
+.lrow .msg{color:var(--mut);font-size:12.5px;margin:4px 0 0;white-space:pre-wrap;word-break:break-word}
+.lrow .pref{color:var(--gold);font-size:12px;font-weight:700;margin:4px 0 0}
+.lrow .acts{flex-wrap:wrap;justify-content:flex-end}
+.biz{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--mut);
+  border:1px solid var(--line);border-radius:99px;padding:3px 9px;white-space:nowrap;width:max-content;max-width:100%;cursor:pointer;background:transparent;font-family:inherit}
+button.biz:hover{border-color:rgba(201,169,106,.5);color:var(--gold)}
+.biz svg{width:13px;height:13px}
+.biz.gold{color:var(--gold);border-color:rgba(201,169,106,.45)}
+.nav .nb{margin-inline-start:auto;background:var(--gold);color:var(--on);font-size:10.5px;font-weight:900;
+  min-width:20px;height:20px;padding:0 6px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- leads ---------- */
+.lrow{display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+.lrow.done{opacity:.55}
+.lrow .meta b .when{color:var(--gold);font-size:11px;font-weight:700;margin-inline-start:8px;text-transform:none}
+.lrow .msg{color:var(--mut);font-size:12.5px;margin:4px 0 0;white-space:pre-wrap;word-break:break-word}
+.lrow .pref{color:var(--gold);font-size:12px;font-weight:700;margin:4px 0 0}
+.lrow .acts{flex-wrap:wrap;justify-content:flex-end}
+.biz{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--mut);
+  border:1px solid var(--line);border-radius:99px;padding:3px 9px;white-space:nowrap;width:max-content;max-width:100%;cursor:pointer;background:transparent;font-family:inherit}
+button.biz:hover{border-color:rgba(201,169,106,.5);color:var(--gold)}
+.nav .nb{margin-inline-start:auto;background:var(--gold);color:var(--on);font-size:10.5px;font-weight:900;
+  min-width:20px;height:20px;padding:0 6px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center}
 
 /* ---------- plan editor ---------- */
 #pe{position:fixed;inset:0;background:#08080a;z-index:9;display:flex;flex-direction:column}

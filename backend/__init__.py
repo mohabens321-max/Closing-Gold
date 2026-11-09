@@ -25,9 +25,11 @@ def create_app():
     app.store = make_store(Config)
 
     from .admin_api import bp as admin_bp
+    from .agency_api import bp as agency_bp
     from .public_api import bp as public_bp
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(agency_bp)
 
     def store():
         return current_app.store
@@ -92,6 +94,11 @@ def create_app():
 
     @app.get('/admin')
     def admin():
+        return page('admin')
+
+    @app.get('/agency/<slug>')
+    def agency_dashboard(slug):
+        # même page HTML que l'admin ; le JS détecte le mode agence via ?t=
         return page('admin')
 
     @app.get('/a/<path:rest>')
