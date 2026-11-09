@@ -11,7 +11,7 @@ function fillBrand(){const a=D.agencies.find(x=>x.id==$('#bg').value);if(a){$('#
 const api=async(p,m,b)=>{const r=await fetch(API_BASE+p,{method:m||'GET',headers:{authorization:'Bearer '+tk},body:b===undefined?undefined:(b instanceof Blob?b:JSON.stringify(b))});if(r.status==401){sessionStorage.tk='';$('#app').hidden=true;$('#login').hidden=false;throw 0}return r.json()};
 
 let nm={},sl={},FQ='',LQ='',MY_AGENCY=null;
-const lk=h=>h.slug?'/a/'+sl[h.agency]+'/'+h.slug:'/h/'+h.id;
+const lk=h=>{const s=h.slug||'';if(AGENCY_MODE)return s?'/a/'+(MY_AGENCY&&MY_AGENCY.slug||'')+'/'+s:'/h/'+h.id;return s&&sl[h.agency]?'/a/'+sl[h.agency]+'/'+s:'/h/'+h.id};
 
 const S='fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
 const ICO={
@@ -117,7 +117,7 @@ function renderHouses(){
     return '<div class="hrow">'
       +'<div class="thumb'+(live?'':' ph')+'"'+(live?' style="background-image:url('+esc(h.cover)+')"':'')+'></div>'
       +'<div class="meta"><b>'+esc(h.name)+'</b>'
-        +'<span>'+esc(nm[h.agency]||'')+' · '+h.n+' pièce'+(h.n>1?'s':'')+(h.price?' · '+esc(h.price):'')+'</span>'
+        +'<span>'+esc(AGENCY_MODE?(MY_AGENCY&&MY_AGENCY.name||''):(nm[h.agency]||''))+' · '+h.n+' pièce'+(h.n>1?'s':'')+(h.price?' · '+esc(h.price):'')+'</span>'
         +'<a class="lnk" dir="ltr" href="'+lk(h)+'" target="_blank" rel="noreferrer">'+lk(h)+'</a>'
         +'<span class="biz">'+ICO.eye+' '+(h.views||0)+' vue'+((h.views||0)>1?'s':'')+(h.today?' · '+h.today+' aujourd\'hui':'')+'</span>'
         +(h.leads?'<button class="biz gold" data-lfh="'+esc(h.name)+'" title="Voir les demandes">'+ICO.mail+' '+h.leads+' demande'+(h.leads>1?'s':'')+'</button>':'')
@@ -198,7 +198,8 @@ function openQr(hid){
   if(!h)return;
   const fullUrl=location.origin+lk(h);
   $('#qrtitle').textContent=h.name;
-  $('#qrsub').textContent=(nm[h.agency]||'')+' — Scannez le code pour ouvrir la visite';
+  const agn=AGENCY_MODE?(MY_AGENCY&&MY_AGENCY.name||''):(nm[h.agency]||'');
+  $('#qrsub').textContent=agn+' — Scannez le code pour ouvrir la visite';
   $('#qrlink').textContent=fullUrl;
   $('#qrarea').innerHTML='';
   
@@ -347,7 +348,9 @@ async function openInfo(hid){
   if(!h||h.e)return toast('Maison introuvable','err');
   const i=h.info||{};
   IH=hid;
-  $('#ifname').textContent=(nm[h.agency]||'')+' · /a/'+(sl[h.agency]||'')+'/'+(h.slug||h.id);
+  const agn=AGENCY_MODE?(MY_AGENCY&&MY_AGENCY.name||''):(nm[h.agency]||'');
+  const slg=AGENCY_MODE?(MY_AGENCY&&MY_AGENCY.slug||''):(sl[h.agency]||'');
+  $('#ifname').textContent=agn+' · /a/'+slg+'/'+(h.slug||h.id);
   $('#i_type').value=i.type||'';
   $('#i_price').value=i.price||'';
   $('#i_surface').value=i.surface||'';
