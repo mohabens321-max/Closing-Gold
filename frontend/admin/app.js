@@ -375,7 +375,8 @@ $('#i_save').onclick=async()=>{
 addEventListener('keydown',e=>{if(e.key=='Escape'&&!$('#infom').hidden){$('#infom').hidden=true}});
 
 document.addEventListener('click',async e=>{
-  const b=e.target;
+  const b=e.target.closest('button,a');
+  if(!b)return;
   if(b.dataset.lfh){LQ=b.dataset.lfh;$('#leadsearch').value=LQ;renderLeads();document.querySelector('#s-leads').scrollIntoView({behavior:'smooth'})}
   if(b.dataset.ld){await api('lead/'+b.dataset.ld,'POST',{done:+b.dataset.done});toast('Demande mise à jour','ok');load()}
   if(b.dataset.ldel&&confirm('Supprimer cette demande ?')){await api('dellead/'+b.dataset.ldel,'POST',{});load()}
