@@ -5,6 +5,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN useradd -m app && chown -R app /app
+RUN echo "build-$(date +%s)" > /app/.build && useradd -m app && chown -R app /app
 USER app
 CMD ["sh", "-c", "gunicorn -b 0.0.0.0:${PORT} -w 2 --threads 4 --timeout 60 app:app"]
