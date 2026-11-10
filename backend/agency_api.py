@@ -80,7 +80,7 @@ def my_houses(aid):
         if not h or h.get('agency') != aid:
             continue
         v = hv.get('house/' + h['id'], {'total': 0, 'today': 0})
-        rows.append({'id': h['id'], 'agency': a['id'], 'name': h['name'], 'status': h['status'],
+        rows.append({'id': h['id'], 'agency': aid, 'name': h['name'], 'status': h['status'],
                      'slug': h.get('slug', ''), 'n': len(h['rooms']),
                      'cover': (h['rooms'][0].get('image', '') if h['rooms'] else ''),
                      'price': (h.get('info') or {}).get('price', ''),
