@@ -86,8 +86,9 @@ function renderLeads(){
       +'<div class="acts">'
         +'<a class="btn icon" href="'+wa+'" target="_blank" rel="noreferrer" title="Répondre sur WhatsApp">'+ICO.phone+'</a>'
         +'<a class="btn icon" href="tel:+'+esc(r.phoneDigits||r.phone.replace(/\D/g,''))+'" title="Appeler">'+ICO.phone+'</a>'
-        +'<button class="btn icon" data-ld="'+r.id+'" data-done="'+(r.done?0:1)+'" title="'+(r.done?'Marquer comme nouveau':'Marquer comme contacté')+'">'+ICO.check+'</button>'
-        +'<button class="btn icon danger" data-ldel="'+r.id+'" title="Supprimer">'+ICO.trash+'</button>'
+        +(AGENCY_MODE?''
+          :'<button class="btn icon" data-ld="'+r.id+'" data-done="'+(r.done?0:1)+'" title="'+(r.done?'Marquer comme nouveau':'Marquer comme contacté')+'">'+ICO.check+'</button>'
+           +'<button class="btn icon danger" data-ldel="'+r.id+'" title="Supprimer">'+ICO.trash+'</button>')
       +'</div></div>';
   }).join('')||'<div class="empty">'+(q?'Aucun résultat pour « '+esc(LQ)+' ».':'Aucune demande pour le moment. Les demandes des visiteurs apparaîtront ici.')+'</div>';
 }
@@ -123,14 +124,18 @@ function renderHouses(){
         +(h.leads?'<button class="biz gold" data-lfh="'+esc(h.name)+'" title="Voir les demandes">'+ICO.mail+' '+h.leads+' demande'+(h.leads>1?'s':'')+'</button>':'')
         +'</div>'
       +'<div class="acts">'
-        +'<button class="btn icon'+(h.desc?' has':'')+'" data-inf="'+h.id+'" title="'+(h.desc?'Modifier la description et les informations':'Ajouter une description')+'">'+ICO.info+'</button>'
-        +'<button class="btn icon" data-qr="'+h.id+'" title="QR code et impression">'+ICO.qr+'</button>'
-        +'<button class="btn icon" data-fb="'+h.id+'" title="Photos 360° pour Facebook">'+ICO.globe+'</button>'
-        +'<button class="btn icon" data-s2="'+h.id+'" title="Modifier l\'identifiant">'+ICO.pencil+'</button>'
-        +'<button class="btn icon" data-p="'+h.id+'" title="Plan des pièces">'+ICO.map+'</button>'
-        +'<button class="btn icon danger" data-d="'+h.id+'" title="Supprimer">'+ICO.trash+'</button>'
+        +(AGENCY_MODE
+          ?'<button class="btn icon'+(h.desc?' has':'')+'" data-inf="'+h.id+'" title="Voir les informations">'+ICO.info+'</button>'
+           +'<button class="btn icon" data-qr="'+h.id+'" title="QR code et impression">'+ICO.qr+'</button>'
+           +'<button class="btn icon" data-fb="'+h.id+'" title="Photos 360° pour Facebook">'+ICO.globe+'</button>'
+          :'<button class="btn icon'+(h.desc?' has':'')+'" data-inf="'+h.id+'" title="'+(h.desc?'Modifier la description et les informations':'Ajouter une description')+'">'+ICO.info+'</button>'
+           +'<button class="btn icon" data-qr="'+h.id+'" title="QR code et impression">'+ICO.qr+'</button>'
+           +'<button class="btn icon" data-fb="'+h.id+'" title="Photos 360° pour Facebook">'+ICO.globe+'</button>'
+           +'<button class="btn icon" data-s2="'+h.id+'" title="Modifier l\'identifiant">'+ICO.pencil+'</button>'
+           +'<button class="btn icon" data-p="'+h.id+'" title="Plan des pièces">'+ICO.map+'</button>'
+           +'<button class="btn icon danger" data-d="'+h.id+'" title="Supprimer">'+ICO.trash+'</button>')
       +'</div>'
-      +'<select class="sel" data-h="'+h.id+'">'+['draft','active','blocked'].map(s=>'<option value="'+s+'"'+(s==h.status?' selected':'')+'>'+L[s]+'</option>').join('')+'</select>'
+      +(AGENCY_MODE?'':'<select class="sel" data-h="'+h.id+'">'+['draft','active','blocked'].map(s=>'<option value="'+s+'"'+(s==h.status?' selected':'')+'>'+L[s]+'</option>').join('')+'</select>')
       +'</div>';
   }).join('')||'<div class="empty">'+(q?'Aucun résultat pour « '+esc(FQ)+' ».':'Aucune maison pour le moment.')+'</div>';
 }
@@ -146,8 +151,8 @@ async function load(){
     D.stats=D.stats||{views:0,today:0,leads:0,leadsNew:0};
     nm={};sl={};nm[D.agency.id]=D.agency.name;sl[D.agency.id]=D.agency.slug;
     $('#login').hidden=true;$('#app').hidden=false;
-    const sa=document.querySelector('#s-agencies');if(sa)sa.hidden=true;
-    const navAg=document.querySelector('#nav a[href="#s-agencies"]');if(navAg)navAg.hidden=true;
+    ['#s-agencies','#s-import','#s-brand'].forEach(id=>{const s=document.querySelector(id);if(s)s.hidden=true});
+    ['#s-agencies','#s-import','#s-brand'].forEach(h=>{const n=document.querySelector('#nav a[href="'+h+'"]');if(n)n.hidden=true});
     renderStats();renderAgencies();renderHouses();renderLeads();
     $('#ag').innerHTML='<option value="'+D.agency.id+'">'+esc(D.agency.name)+'</option>';
     $('#bg').innerHTML='<option value="'+D.agency.id+'">'+esc(D.agency.name)+'</option>';
@@ -155,13 +160,7 @@ async function load(){
     const vs=$('#view-site');vs.href='/a/'+D.agency.slug;vs.hidden=false;vs.textContent="Voir ma plateforme ↗";
     document.title='Espace agence — '+D.agency.name;
     const h1=document.querySelector('.topbar h1');if(h1)h1.textContent='Bonjour, '+D.agency.name;
-    const p=document.querySelector('.topbar p');if(p)p.textContent='Gérez vos biens, vos demandes et votre identité.';
-    if(!document.querySelector('#rotatetok')){
-      const b=document.createElement('button');b.id='rotatetok';b.className='btn ghost';b.textContent="Régénérer le lien d'accès";
-      b.onclick=async()=>{if(!confirm("Régénérer le lien ? L'ancien lien cessera de fonctionner."))return;
-        const r=await api('token/rotate','POST',{});if(r.token){tk=r.token;sessionStorage.at=tk;const u=new URL(location.href);u.searchParams.set('t',tk);history.replaceState({},'',u);toast('Nouveau lien généré — copiez-le maintenant','ok');showAgencyLink()}};
-      document.querySelector('.topbar').appendChild(b);
-    }
+    const p=document.querySelector('.topbar p');if(p)p.textContent='Consultez vos biens, vos demandes et vos statistiques. Lecture seule.';
     showAgencyLink();
     return;
   }
@@ -186,7 +185,7 @@ function showAgencyLink(){
     const box=document.createElement('div');box.id='agencylink';box.className='card';box.style.marginBottom='18px';
     box.innerHTML='<div class="card-head"><h2>Votre lien d acces</h2><span class="muted tiny">Partagez ce lien avec votre equipe</span></div>'
       +'<div class="row" style="margin-top:0"><input id="agencylinkinput" readonly dir="ltr" style="flex:1;font-family:monospace;font-size:12.5px"><button class="btn primary" id="agencylinkcopy">Copier</button></div>'
-      +'<p class="muted small" style="margin:8px 0 0">Ce lien donne acces a cet espace. Ne le partagez qu avec vos collaborateurs. Si vous pensez qu il a fuite, cliquez sur Regenerer.</p>';
+      +'<p class="muted small" style="margin:8px 0 0">Ce lien donne acces en lecture seule a vos biens et vos demandes. Ne le partagez qu avec vos collaborateurs. Pour toute modification, contactez l administrateur.</p>';
     document.querySelector('main').insertBefore(box,document.querySelector('#s-overview'));
     $('#agencylinkcopy').onclick=()=>{navigator.clipboard.writeText($('#agencylinkinput').value).then(()=>toast('Lien copié','ok'))};
   }
@@ -360,13 +359,18 @@ async function openInfo(hid){
   $('#i_address').value=i.address||'';
   $('#i_phone').value=i.phone||'';
   $('#i_desc').value=i.desc||'';
+  const ro=AGENCY_MODE;
+  document.querySelectorAll('#infom input,#infom select,#infom textarea').forEach(el=>el.disabled=ro);
+  $('#i_save').hidden=ro;
+  $('#i_cancel').textContent=ro?'Fermer':'Annuler';
+  document.querySelector('.info-head h3').textContent=ro?'Informations de la maison (lecture seule)':'Informations de la maison';
   $('#infom').hidden=false;
-  $('#i_price').focus();
+  if(!ro)$('#i_price').focus();
 }
 $('#i_cancel').onclick=()=>{$('#infom').hidden=true};
 $('#infom').onclick=e=>{if(e.target.id=='infom')$('#infom').hidden=true};
 $('#i_save').onclick=async()=>{
-  if(!IH)return;
+  if(!IH||AGENCY_MODE)return;
   const r=await api('info/'+IH,'POST',{
     type:$('#i_type').value,price:$('#i_price').value.trim(),surface:$('#i_surface').value.trim(),
     floor:$('#i_floor').value.trim(),beds:$('#i_beds').value,baths:$('#i_baths').value,
@@ -381,8 +385,8 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button,a');
   if(!b)return;
   if(b.dataset.lfh){LQ=b.dataset.lfh;$('#leadsearch').value=LQ;renderLeads();document.querySelector('#s-leads').scrollIntoView({behavior:'smooth'})}
-  if(b.dataset.ld){await api('lead/'+b.dataset.ld,'POST',{done:+b.dataset.done});toast('Demande mise à jour','ok');load()}
-  if(b.dataset.ldel&&confirm('Supprimer cette demande ?')){await api('dellead/'+b.dataset.ldel,'POST',{});load()}
+  if(b.dataset.ld&&!AGENCY_MODE){await api('lead/'+b.dataset.ld,'POST',{done:+b.dataset.done});toast('Demande mise à jour','ok');load()}
+  if(b.dataset.ldel&&!AGENCY_MODE&&confirm('Supprimer cette demande ?')){await api('dellead/'+b.dataset.ldel,'POST',{});load()}
   if(b.dataset.agencylink){
     const a=D.agencies.find(x=>x.id==b.dataset.agencylink);
     if(a&&!a.token){const r=await api('agencytoken/'+a.id,'POST',{});a.token=r.token}
@@ -395,22 +399,22 @@ document.addEventListener('click',async e=>{
   if(b.dataset.inf) openInfo(b.dataset.inf);
   if(b.dataset.qr) openQr(b.dataset.qr);
   if(b.dataset.fb) export360(b.dataset.fb);
-  if(b.dataset.t){await api('status','POST',{type:b.dataset.t,id:b.dataset.i,status:b.dataset.s});load()}
-  if(b.dataset.p)editPlan(b.dataset.p);
-  if(b.dataset.s2){const s=prompt('Nouvel identifiant de la maison (lettres, chiffres et -)');if(s){const r=await api('slug','POST',{id:b.dataset.s2,slug:s});if(r.e)alert('Identifiant déjà utilisé ou invalide');load()}}
-  if(b.dataset.x&&confirm('Supprimer définitivement cette agence ?')){const r=await api('delagency/'+b.dataset.x,'POST',{});if(r.e)alert("Supprimez d'abord les maisons de cette agence");load()}
-  if(b.dataset.d&&confirm('Supprimer définitivement cette maison ?')){await api('del/'+b.dataset.d,'POST',{});load()}
+  if(b.dataset.t&&!AGENCY_MODE){await api('status','POST',{type:b.dataset.t,id:b.dataset.i,status:b.dataset.s});load()}
+  if(b.dataset.p&&!AGENCY_MODE)editPlan(b.dataset.p);
+  if(b.dataset.s2&&!AGENCY_MODE){const s=prompt('Nouvel identifiant de la maison (lettres, chiffres et -)');if(s){const r=await api('slug','POST',{id:b.dataset.s2,slug:s});if(r.e)alert('Identifiant déjà utilisé ou invalide');load()}}
+  if(b.dataset.x&&!AGENCY_MODE&&confirm('Supprimer définitivement cette agence ?')){const r=await api('delagency/'+b.dataset.x,'POST',{});if(r.e)alert("Supprimez d'abord les maisons de cette agence");load()}
+  if(b.dataset.d&&!AGENCY_MODE&&confirm('Supprimer définitivement cette maison ?')){await api('del/'+b.dataset.d,'POST',{});load()}
 });
 
-document.addEventListener('change',async e=>{if(e.target.dataset.h){await api('status','POST',{type:'house',id:e.target.dataset.h,status:e.target.value});load()}});
+document.addEventListener('change',async e=>{if(e.target.dataset.h&&!AGENCY_MODE){await api('status','POST',{type:'house',id:e.target.dataset.h,status:e.target.value});load()}});
 $('#go').onclick=async()=>{tk=$('#tk').value.trim();sessionStorage.tk=tk;
 try{await load()}catch(e){
   let m='Mot de passe incorrect';
   try{const h=await (await fetch('/api/admin/ping')).json();if(!h.configured)m="Le serveur n'utilise pas ADMIN_TOKEN (mot de passe par défaut actif). Définissez ADMIN_TOKEN sur Vercel puis redéployez."}catch(_){}
   alert(m);
 }};
-$('#aa').onclick=async()=>{const r=await api('agency','POST',{name:$('#an').value.trim(),slug:$('#as').value.trim()});if(r.e)return alert('Nom ou identifiant manquant ou déjà utilisé');$('#an').value=$('#as').value='';load()};
-$('#up').onclick=async()=>{const f=$('#jf').files[0],ag=$('#ag').value;if(!f||!ag)return alert("Choisissez le fichier et l'agence");
+$('#aa').onclick=async()=>{if(AGENCY_MODE)return;const r=await api('agency','POST',{name:$('#an').value.trim(),slug:$('#as').value.trim()});if(r.e)return alert('Nom ou identifiant manquant ou déjà utilisé');$('#an').value=$('#as').value='';load()};
+$('#up').onclick=async()=>{if(AGENCY_MODE)return;const f=$('#jf').files[0],ag=$('#ag').value;if(!f||!ag)return alert("Choisissez le fichier et l'agence");
 try{const j=JSON.parse(await f.text()),h=await api('house','POST',{agency:ag,name:j.name,slug:$('#hsg').value.trim()}),rooms=[];let i=0;
 for(const r of j.rooms){msg('Envoi '+(++i)+' / '+j.rooms.length+' ...');let img=r.image;if(img.startsWith('data:')){await api('img/'+h.id+'/'+r.id,'PUT',await shrink(img));img='/img/'+h.id+'/'+r.id}
 rooms.push({id:r.id,name:r.name,image:img,dims:r.dims,lon0:r.lon0,desc:r.desc,hotspots:r.hotspots,infos:r.infos})}
@@ -438,7 +442,7 @@ pc.onpointerup=pc.onpointercancel=()=>{dg=null};
 $('#pdoor').onclick=()=>{E.mode=!E.mode;$('#pdoor').classList.toggle('primary',!!E.mode)};$('#pfit').onclick=()=>pdraw(1);$('#pclose').onclick=()=>{$('#pe').hidden=true;E=null};
 $('#psave').onclick=async()=>{const r={};E.rs.forEach(q=>r[q.id]={x:q.x,z:q.z});const x=await api('plan/'+E.id,'POST',{plan:{r,d:E.dr},dims:E.dims});x.ok?toast('Plan enregistré','ok'):toast("Échec de l'enregistrement",'err');load()};
 $('#bg').onchange=fillBrand;
-$('#bs').onclick=async()=>{const id=$('#bg').value;if(!id)return alert("Ajoutez d'abord une agence");try{const f=$('#lf').files[0];if(f)await api('logo/'+id,'POST',await logoBlob(f));const k=$('#bk').files[0];if(k){if(k.size>MAXUP)return alert('Fichier trop lourd (max '+Math.floor(MAXUP/1e6)+' Mo), choisissez un fichier plus léger');await api('bg/'+id,'POST',k)}await api('brand','POST',{id,color:$('#bc').value,font:$('#bf').value,logo:!!f,bg:$('#bb').value,tx:$('#bt').value,fx:$('#be').value,bgt:k?k.type:''});const a=D.agencies.find(x=>x.id==id);Object.assign(a,{color:$('#bc').value,font:$('#bf').value,bg:$('#bb').value,tx:$('#bt').value,fx:$('#be').value});if(f)a.logo=1;if(k)a.bgType=k.type;$('#msg2').textContent="Identité enregistrée. Elle apparaît sur les pages de l'agence sous une minute environ.";$('#lf').value='';$('#bk').value=''}catch(x){$("#msg2").textContent="Échec de l'enregistrement"}};
+$('#bs').onclick=async()=>{if(AGENCY_MODE)return;const id=$('#bg').value;if(!id)return alert("Ajoutez d'abord une agence");try{const f=$('#lf').files[0];if(f)await api('logo/'+id,'POST',await logoBlob(f));const k=$('#bk').files[0];if(k){if(k.size>MAXUP)return alert('Fichier trop lourd (max '+Math.floor(MAXUP/1e6)+' Mo), choisissez un fichier plus léger');await api('bg/'+id,'POST',k)}await api('brand','POST',{id,color:$('#bc').value,font:$('#bf').value,logo:!!f,bg:$('#bb').value,tx:$('#bt').value,fx:$('#be').value,bgt:k?k.type:''});const a=D.agencies.find(x=>x.id==id);Object.assign(a,{color:$('#bc').value,font:$('#bf').value,bg:$('#bb').value,tx:$('#bt').value,fx:$('#be').value});if(f)a.logo=1;if(k)a.bgType=k.type;$('#msg2').textContent="Identité enregistrée. Elle apparaît sur les pages de l'agence sous une minute environ.";$('#lf').value='';$('#bk').value=''}catch(x){$("#msg2").textContent="Échec de l'enregistrement"}};
 // ---- interface ----
 $('#search').oninput=()=>{FQ=$('#search').value;renderHouses()};
 $('#leadsearch').oninput=()=>{LQ=$('#leadsearch').value;renderLeads()};
