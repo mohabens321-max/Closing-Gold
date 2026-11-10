@@ -43,7 +43,7 @@ function renderStats(){
   const dr=D.houses.filter(h=>h.status=='draft').length;
   const st=D.stats||{views:0,today:0,leads:0,leadsNew:0};
   $('#stats').innerHTML=
-    '<div class="stat"><b>'+D.agencies.length+'</b><span>Agences</span></div>'+
+    (AGENCY_MODE?'':'<div class="stat"><b>'+D.agencies.length+'</b><span>Agences</span></div>')+
     '<div class="stat"><b>'+D.houses.length+'</b><span>Maisons</span></div>'+
     '<div class="stat ok"><b>'+on+'</b><span>En ligne</span></div>'+
     '<div class="stat"><b>'+st.views+'</b><span>Vues totales</span></div>'+
