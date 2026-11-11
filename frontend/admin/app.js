@@ -3,6 +3,9 @@ const AGENCY_MODE=(location.pathname.startsWith('/agency')||new URLSearchParams(
 const API_BASE=AGENCY_MODE?'/api/agency/':'/api/admin/';
 
 let tk=AGENCY_MODE?(new URLSearchParams(location.search).get('t')||sessionStorage.at||''):(sessionStorage.tk||''),D,MAXUP=24e6;
+// Connexion directe pour l'administrateur : /admin#t=TOKEN
+// Le fragment (#...) n'est jamais envoyé au serveur ni aux journaux d'accès.
+if(!AGENCY_MODE){const m=/#t=([A-Za-z0-9_-]{8,})/.exec(location.hash);if(m){tk=m[1];sessionStorage.tk=tk;history.replaceState(null,'',location.pathname+location.search)}}
 const msg=t=>$('#msg').textContent=t;
 const MAXW=3072,Q=.82;
 const shrink=src=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const w=Math.min(i.width,MAXW),c=document.createElement('canvas');c.width=w;c.height=Math.round(w*i.height/i.width);c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(),'image/jpeg',Q)};i.onerror=no;i.src=src});
@@ -409,10 +412,11 @@ document.addEventListener('click',async e=>{
 document.addEventListener('change',async e=>{if(e.target.dataset.h&&!AGENCY_MODE){await api('status','POST',{type:'house',id:e.target.dataset.h,status:e.target.value});load()}});
 $('#go').onclick=async()=>{tk=$('#tk').value.trim();sessionStorage.tk=tk;
 try{await load()}catch(e){
-  let m='Mot de passe incorrect';
+  let m='Mot de passe incorrect. Vérifiez les majuscules/minuscules et les espaces.';
   try{const h=await (await fetch('/api/admin/ping')).json();if(!h.configured)m="Le serveur n'utilise pas ADMIN_TOKEN (mot de passe par défaut actif). Définissez ADMIN_TOKEN sur Vercel puis redéployez."}catch(_){}
   alert(m);
 }};
+$('#tk').addEventListener('keydown',e=>{if(e.key==='Enter')$('#go').click()});
 $('#aa').onclick=async()=>{if(AGENCY_MODE)return;const r=await api('agency','POST',{name:$('#an').value.trim(),slug:$('#as').value.trim()});if(r.e)return alert('Nom ou identifiant manquant ou déjà utilisé');$('#an').value=$('#as').value='';load()};
 $('#up').onclick=async()=>{if(AGENCY_MODE)return;const f=$('#jf').files[0],ag=$('#ag').value;if(!f||!ag)return alert("Choisissez le fichier et l'agence");
 try{const j=JSON.parse(await f.text()),h=await api('house','POST',{agency:ag,name:j.name,slug:$('#hsg').value.trim()}),rooms=[];let i=0;
