@@ -1,8 +1,9 @@
 """إعدادات المشروع من متغيرات البيئة."""
 import os
 
-# كلمة السر الافتراضية للوحة التحكم. تُستعمل فقط إذا لم يُعيَّن أي متغير بيئة،
-# حتى لا تبقى اللوحة مقفولة نهائياً إذا نُسي الإعداد.
+# Fallback admin password: used only when no environment variable is set.
+# In production the real value lives in the Vercel env var ADMIN_TOKEN, and any
+# change to it only takes effect after a fresh deployment (redeploy).
 DEFAULT_ADMIN_TOKEN = 'Mohabens_123'
 
 # أسماء متغيرات البيئة المقبولة، بالترتيب.
