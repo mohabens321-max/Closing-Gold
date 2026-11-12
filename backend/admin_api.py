@@ -307,6 +307,9 @@ def set_info(hid):
         return J({'e': 1}, 404)
     b = body()
     info = {}
+    name = str(b.get('name') or '').strip()[:120]
+    if name:
+        h['name'] = name
     desc = str(b.get('desc') or '').strip()[:4000]
     if desc:
         info['desc'] = desc

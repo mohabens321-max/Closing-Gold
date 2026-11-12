@@ -353,6 +353,7 @@ async function openInfo(hid){
   const agn=AGENCY_MODE?(MY_AGENCY&&MY_AGENCY.name||''):(nm[h.agency]||'');
   const slg=AGENCY_MODE?(MY_AGENCY&&MY_AGENCY.slug||''):(sl[h.agency]||'');
   $('#ifname').textContent=agn+' · /a/'+slg+'/'+(h.slug||h.id);
+  $('#i_name').value=h.name||'';
   $('#i_type').value=i.type||'';
   $('#i_price').value=i.price||'';
   $('#i_surface').value=i.surface||'';
@@ -375,6 +376,7 @@ $('#infom').onclick=e=>{if(e.target.id=='infom')$('#infom').hidden=true};
 $('#i_save').onclick=async()=>{
   if(!IH||AGENCY_MODE)return;
   const r=await api('info/'+IH,'POST',{
+    name:$('#i_name').value.trim(),
     type:$('#i_type').value,price:$('#i_price').value.trim(),surface:$('#i_surface').value.trim(),
     floor:$('#i_floor').value.trim(),beds:$('#i_beds').value,baths:$('#i_baths').value,
     address:$('#i_address').value.trim(),phone:$('#i_phone').value.trim(),desc:$('#i_desc').value.trim()
